@@ -61,6 +61,12 @@ pip install -r requirements.txt
 pip list
 ```
 
+- Install the spacy language pack(while the venv is activated):
+
+```
+python3.6 -m spacy download en_core_web_sm
+```
+
 - You can then use this venv with an IDE like `pycharm` or activate it if you are using text editors like `VS Code`
 
 - Once you are done working with the venv deactivate using:
