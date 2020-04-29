@@ -24,7 +24,7 @@ python3.6 --version
 python3.6 -m venv folder_name
 ```
 
-If the venv is not install then do so by this command:
+If the venv is not installed then do so by this command:
 
 ```
 sudo apt-get install python3.6-venv
