@@ -136,3 +136,6 @@ def main():
     jsonDump = json.dumps([element.__dict__ for element in allEssayData], indent=4)
     with open("./output.json", "w") as outfile:
         outfile.write(jsonDump)
+
+# run main function
+main()
