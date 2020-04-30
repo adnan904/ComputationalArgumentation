@@ -1,6 +1,13 @@
 from os import listdir
 import json
 
+#############################################
+# PLEASE SET TO CORRECT PATH BEFORE RUNNING #
+#############################################
+CONST_ESSAYPATH = "./data/ArgumentAnnotatedEssays-2.0/brat-project-final/"
+CONST_SUFFICIENTPATH = "./data/UKP-InsufficientArguments_v1.0/data-tokenized.tsv"
+CONST_CONFIRMATIONBIAS = "./data/UKP-OpposingArgumentsInEssays_v1.0/labels.tsv"
+
 
 # Object based on the sample.json file
 class OutputObject(object):
@@ -14,8 +21,8 @@ class OutputObject(object):
     paragraphs = []
 
     # The class "constructor" - It's actually an initializer
-    def __init__(self, id, title, text, major_claim, claims, premises, paragraphs, confirmation_bias):
-        self.id = id
+    def __init__(self, essay_id, title, text, major_claim, claims, premises, paragraphs, confirmation_bias):
+        self.id = essay_id
         self.title = title
         self.text = text
         self.major_claim = major_claim
@@ -25,39 +32,38 @@ class OutputObject(object):
         self.confirmation_bias = confirmation_bias
 
 
-def getEntityContents(fileContent: str, entityName: str) -> list:
+def get_entity_contents(file_content: str, entity_name: str) -> list:
     """
-    :param fileContent: content of the essayXXX.ann
-    :param entityName: MajorClaim or Claim or Premise
+    :param file_content: content of the essayXXX.ann
+    :param entity_name: MajorClaim or Claim or Premise
     :rtype: list
     :return: list of dicts with span, text of given entity and ann-file content
     """
-    lines = fileContent.split("\n")
-    entityContent = []
+    lines = file_content.split("\n")
+    entity_content = []
     for line in lines:
-        if entityName in line:
+        if entity_name in line:
             line = line.split("\t")
-            spanStart = line[1].split(" ")[1]
-            spanEnd = line[1].split(" ")[2]
-            entityContent = entityContent + [{"span": [spanStart, spanEnd], "text": line[2]}]
-    return entityContent
+            span_start = line[1].split(" ")[1]
+            span_end = line[1].split(" ")[2]
+            entity_content = entity_content + [{"span": [span_start, span_end], "text": line[2]}]
+    return entity_content
 
 
-def getParagraphsAndSufficientPerID(essayId: str) -> list:
+def get_paragraphs_and_sufficient_per_id(essay_id: str) -> list:
     """
     :rtype: list
-    :param essayId: ID as string including preceding zeros
+    :param essay_id: ID as string including preceding zeros
     :return: list of dicts of the paragraphs with text and sufficient parameter
     """
-    paragraphs = []
-    tsvFile = open(CONST_SUFFICIENTPATH, "r", errors='ignore')  # Has some weird characters, this removes them
-    fileContent = tsvFile.read()
-    lines = fileContent.split("\n")  # Format in first Line: ESSAY	ARGUMENT	TEXT	ANNOTATION
+    tsv_file = open(CONST_SUFFICIENTPATH, "r", errors='ignore')  # Has some weird characters, this removes them
+    file_content = tsv_file.read()
+    lines = file_content.split("\n")  # Format in first Line: ESSAY	ARGUMENT	TEXT	ANNOTATION
     lines.pop(0)
     paragraphs = []
     for line in lines:
         line = line.split("\t")
-        if int(line[0]) == int(essayId):
+        if int(line[0]) == int(essay_id):
             sufficient = True
             if "insufficient" in line[3]:
                 sufficient = False
@@ -65,38 +71,37 @@ def getParagraphsAndSufficientPerID(essayId: str) -> list:
     return paragraphs
 
 
-def getConfirmationBias(essayId: str) -> bool:
+def get_confirmation_bias(essay_id: str) -> bool:
     """
     :rtype: bool
-    :param essayId: ID as string including preceding zeros
+    :param essay_id: ID as string including preceding zeros
     :return: true if confirmation bias true
     """
-    paragraphs = []
-    tsvFile = open(CONST_CONFIRMATIONBIAS, "r")
-    fileContent = tsvFile.read()
-    lines = fileContent.split("\n")  # Format in first Line: id    label
+    tsv_file = open(CONST_CONFIRMATIONBIAS, "r")
+    file_content = tsv_file.read()
+    lines = file_content.split("\n")  # Format in first Line: id    label
     lines.pop(0)
-    bias = []
     for line in lines:
         line = line.split("\t")
-        if line[0].split("essay")[1] == essayId:
+        if line[0].split("essay")[1] == essay_id:
             if line[0] == "positive":
                 return True
             else:
                 return False
 
 
-def getAllEssayData() -> list:
+def get_all_essay_data() -> list:
     # get all essayXXX.txt file names as basis
-    essayTexts = list(filter(lambda x: ".txt" in x, listdir(CONST_ESSAYPATH)))
-    allOutputElements = []
+    essay_texts = list(filter(lambda x: ".txt" in x, listdir(CONST_ESSAYPATH)))
+    essay_texts.sort()
+    all_output_elements = []
     # go through all essayXXX.txt files and gather all corresponding information
-    for fileName in essayTexts:
-        textFile = open(CONST_ESSAYPATH + fileName, "r")
-        id = fileName.split("essay")[1].split(".txt")[0]  # get ID of current file
+    for fileName in essay_texts:
+        text_file = open(CONST_ESSAYPATH + fileName, "r")
+        file_id = fileName.split("essay")[1].split(".txt")[0]  # get ID of current file
 
         # read text-file and clean
-        content = textFile.read()
+        content = text_file.read()
         content = content.replace("\n \n", "\n\n")  # slight cleaning: essay140.txt has "/n /n" with a space
         content = content.replace("\n  \n", "\n\n")  # slight cleaning: essay402.txt has "/n  /n" with a space
 
@@ -106,36 +111,31 @@ def getAllEssayData() -> list:
         text = content.split("\n\n")[1]
 
         # gather corresponding essayXXX.ann file
-        fileAnn = open(CONST_ESSAYPATH + "essay" + id + ".ann", "r")
-        annContent = fileAnn.read()
+        file_ann = open(CONST_ESSAYPATH + "essay" + file_id + ".ann", "r")
+        ann_content = file_ann.read()
 
-        majorClaims = getEntityContents(annContent, "MajorClaim")
-        claims = getEntityContents(annContent, "Claim")
-        premises = getEntityContents(annContent, "Premise")
+        major_claims = get_entity_contents(ann_content, "MajorClaim")
+        claims = get_entity_contents(ann_content, "Claim")
+        premises = get_entity_contents(ann_content, "Premise")
 
-        paragraphs = getParagraphsAndSufficientPerID(id)
+        paragraphs = get_paragraphs_and_sufficient_per_id(file_id)
 
-        bias = getConfirmationBias(id)
+        bias = get_confirmation_bias(file_id)
 
         # create a output object as contained in output.json and save it
-        obj = OutputObject(id, title, text, majorClaims, claims, premises, paragraphs, bias)
-        allOutputElements = allOutputElements + [obj]
-    return allOutputElements
+        obj = OutputObject(file_id, title, text, major_claims, claims, premises, paragraphs, bias)
+        all_output_elements = all_output_elements + [obj]
+    return all_output_elements
 
-
-#############################################
-# PLEASE SET TO CORRECT PATH BEFORE RUNNING #
-#############################################
-CONST_ESSAYPATH = "./data/ArgumentAnnotatedEssays-2.0/brat-project-final/"
-CONST_SUFFICIENTPATH = "./data/UKP-InsufficientArguments_v1.0/data-tokenized.tsv"
-CONST_CONFIRMATIONBIAS = "./data/UKP-OpposingArgumentsInEssays_v1.0/labels.tsv"
 
 def main():
-    allEssayData = getAllEssayData()
+    all_essay_data = get_all_essay_data()
     # write
-    jsonDump = json.dumps([element.__dict__ for element in allEssayData], indent=4)
+    json_dump = json.dumps([element.__dict__ for element in all_essay_data], indent=4)
     with open("./output.json", "w") as outfile:
-        outfile.write(jsonDump)
+        outfile.write(json_dump)
+
 
 # run main function
-main()
+if __name__ == '__main__':
+    main()
