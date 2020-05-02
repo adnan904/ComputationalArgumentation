@@ -1,12 +1,14 @@
 from os import listdir
 import json
+import os
 
 #############################################
 # PLEASE SET TO CORRECT PATH BEFORE RUNNING #
 #############################################
-CONST_ESSAYPATH = "./data/ArgumentAnnotatedEssays-2.0/brat-project-final/"
-CONST_SUFFICIENTPATH = "./data/UKP-InsufficientArguments_v1.0/data-tokenized.tsv"
-CONST_CONFIRMATIONBIAS = "./data/UKP-OpposingArgumentsInEssays_v1.0/labels.tsv"
+CURRENT_WORKING_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+CONST_ESSAYPATH = f'{CURRENT_WORKING_DIR}/code/data/ArgumentAnnotatedEssays-2.0/brat-project-final/'
+CONST_SUFFICIENTPATH = f'{CURRENT_WORKING_DIR}/code/data/UKP-InsufficientArguments_v1.0/data-tokenized.tsv'
+CONST_CONFIRMATIONBIAS = f'{CURRENT_WORKING_DIR}/code/data/UKP-OpposingArgumentsInEssays_v1.0/labels.tsv'
 
 
 # Object based on the sample.json file
@@ -84,7 +86,7 @@ def get_confirmation_bias(essay_id: str) -> bool:
     for line in lines:
         line = line.split("\t")
         if line[0].split("essay")[1] == essay_id:
-            if line[0] == "positive":
+            if line[1] == "positive":
                 return True
             else:
                 return False
@@ -132,7 +134,7 @@ def main():
     all_essay_data = get_all_essay_data()
     # write
     json_dump = json.dumps([element.__dict__ for element in all_essay_data], indent=4)
-    with open("./output.json", "w") as outfile:
+    with open(f'{CURRENT_WORKING_DIR}/code/data/unified_data.json', "w") as outfile:
         outfile.write(json_dump)
 
 

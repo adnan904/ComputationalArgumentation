@@ -1,5 +1,6 @@
 .remote.cfg
 .vscode/
+venv
 venv37
 venv-tensorboard-win
 results

@@ -67,7 +67,21 @@ pip list
 python3.6 -m spacy download en_core_web_sm
 ```
 
+- Install Jupyter Notebook(while the venv is activated):
+
+```
+pip install notebook
+```
+
 - You can then use this venv with an IDE like `pycharm` or activate it if you are using text editors like `VS Code`
+
+- To run the Jupyter Notebook, navigate to the notebook's directory(while the venv is activated):
+
+```
+jupyter notebook
+```
+
+In the browser then open the notebook and run it.
 
 - Once you are done working with the venv deactivate using:
 
