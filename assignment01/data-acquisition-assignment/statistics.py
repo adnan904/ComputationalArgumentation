@@ -14,7 +14,7 @@ TRAIN_TEST_SPLIT_FILE_PATH = f'{CURRENT_WORKING_DIR}/code/data/train-test-split.
 
 def get_train_split() -> list:
     """
-    Reads the train-test-split.csv file and results a list of ids of all the essays that have been SET for 'TRAIN'
+    Reads the train-test-split.csv file and returns a list of ids of all the essays that have been SET for 'TRAIN'
     :return: train_ids : integer IDs of the essays SET as 'TRAIN'
     """
     with open(TRAIN_TEST_SPLIT_FILE_PATH, 'r') as train_file:
