@@ -17,18 +17,23 @@ TRAIN_TEST_SPLIT_FILE_PATH = f'{CURRENT_WORKING_DIR}/code/data/train-test-split.
 nlp = spacy.load("en_core_web_sm")
 
 
-def get_train_split() -> list:
+def get_train_test_split_dict_and_num_essays():
     """
-    Reads the train-test-split.csv file and returns a list of ids of all the essays that have been SET for 'TRAIN'
-    :return: train_ids : integer IDs of the essays SET as 'TRAIN'
+    Reads the train-test-split.csv file and returns a dict {essayid : split} and number of essays set as TRAIN
+    :return: num_essays : number od essays SET to TRAIN in the train-test-split.csv
+             train_test_split_dict: a dict of the form {essayid : split}
     """
     with open(TRAIN_TEST_SPLIT_FILE_PATH, 'r') as train_file:
-        train_ids = []
-        file_content = train_file.read().split('\n')[1:]
+        train_test_split_dict = {}
+        num_essays = 0
+        file_content = train_file.read().split('\n')[1:-1]
         for line in file_content:
-            if 'TRAIN' in line:
-                train_ids.append(line.split('";')[0].split('"essay')[1])
-        return train_ids
+            essay_id = line.split('";')[0].split('"essay')[1]
+            split = line.split(';"')[1].split('"')[0]
+            train_test_split_dict[essay_id] = split
+            if split == 'TRAIN':
+                num_essays += 1
+        return num_essays, train_test_split_dict
 
 
 def get_most_specific_words(text_list: list) -> list:
@@ -71,16 +76,15 @@ def main():
     major_claims_text = []
     claims_text = []
     premises_text = []
-    # Getting the list of IDs of train-split from train-test-split.csv
-    train_split_essay_ids = get_train_split()
     # Number of Essays = Number of Essays in the train-test-split.csv file that have been SET 'TRAIN'
-    num_of_essays = len(train_split_essay_ids)
+    # Getting the list of IDs of train-split from train-test-split.csv
+    num_of_essays, train_test_split_dict = get_train_test_split_dict_and_num_essays()
 
     with open(UNIFIED_DATA_FILE_PATH, 'r') as f:
         unified_file = json.load(f)
         for essay in unified_file:
             # We only need to compute for essays SET to 'TRAIN'
-            if essay['id'] in train_split_essay_ids:
+            if train_test_split_dict[essay['id']] == 'TRAIN':
                 # Tokenizing the text for the essay using the spaCy library
                 text = nlp(essay['text'])
                 num_of_paragraphs += len(essay['paragraphs'])
