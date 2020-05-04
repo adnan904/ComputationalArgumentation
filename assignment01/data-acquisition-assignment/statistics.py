@@ -36,25 +36,40 @@ def get_train_test_split_dict_and_num_essays():
         return num_essays, train_test_split_dict
 
 
-def get_most_common_words(text_list: list) -> list:
+def get_most_common_words(text_list: list):
     """
-    Gets a list of lowercase sentences. It performs the following on them:
+    Gets a list of  sentences. It performs the following on them:
         - Joins the sentences to a single text string
         - Tokenize's the text using the spaCy library
         - Filters the tokens that are not stop-words(e.g. and, a, is, the, which etc) or punctuation
+        - converts the tokens to lowercase so that e.g people and People are not counted separately
         - Calculates the frequency of all the remaining words
-        - Filters the 10 most common words
-        - Returns a list of tuples of the form (word, frequency)
+        - Filters the most common words
+        - Returns a list of tuples of the form (word, frequency) and a set of unique words occurring in the text
     :param text_list: a list of lowercase sentences
-    :return: a list of 10 most common tuples of the form (word, frequency)
+    :return: a list most common tuples of the form (word, frequency), and a set of unique words occurring in the text
     """
     text = '. '.join(text_list)
     tokens = nlp(text)
-    words = [token.text for token in tokens
+    words = [token.text.lower() for token in tokens
              if token.is_stop is not True and token.is_punct is not True]
+    words_set = set(words)
     words_freq = Counter(words)
-    specific_words = words_freq.most_common(10)
-    return specific_words
+    common_words = words_freq.most_common(len(words))
+    return common_words, words_set
+
+
+def get_specific_words(counter, set1, set2):
+    count = 0
+    ten_most_specific_tuple = []
+
+    for word in counter:
+        if count >= 10:
+            break
+        if word[0] not in set1 and word[0] not in set2:
+            ten_most_specific_tuple.append(word)
+            count += 1
+    return ten_most_specific_tuple
 
 
 def main():
@@ -120,9 +135,19 @@ def main():
         avg_num_of_tokens_in_premises = num_of_tokens_in_premises / num_of_premises
 
         # Calculating the 10 most specific words in major_claims, claims, and premises
-        major_claims_common_words = get_most_common_words(major_claims_text)
-        claims_common_words = get_most_common_words(claims_text)
-        premises_common_words = get_most_common_words(premises_text)
+        # Getting the words_frequency and a set of unique words
+        major_claims_common_words, major_claims_words_set = get_most_common_words(major_claims_text)
+        claims_common_words, claims_words_set = get_most_common_words(claims_text)
+        premises_common_words, premises_words_set = get_most_common_words(premises_text)
+
+        # We iterate through the most frequently occurring words and then check if they occur in the other argument unit
+        # or not. If they do we skip them and continue this until we have 10 most specific words
+        major_claims_ten_specific_words = get_specific_words(major_claims_common_words, claims_words_set,
+                                                             premises_words_set)
+        claims_ten_specific_words = get_specific_words(claims_common_words, major_claims_words_set,
+                                                       premises_words_set)
+        premises_ten_specific_words = get_specific_words(premises_common_words, major_claims_words_set,
+                                                         claims_words_set)
 
     print("The Preliminary Statistics are:")
     print("Number of essays: {}".format(num_of_essays))
@@ -140,13 +165,13 @@ def main():
     print("Average number of tokens in claims: {}".format(avg_num_of_tokens_in_claims))
     print("Average number of tokens in premises: {}".format(avg_num_of_tokens_in_premises))
     print("\n10 most specific words in major claims:")
-    for i, word in enumerate(major_claims_common_words):
+    for i, word in enumerate(major_claims_ten_specific_words):
         print("{}) '{}' -- {} times".format(i+1, word[0], word[1]))
     print("\n10 most specific words in claims:")
-    for i, word in enumerate(claims_common_words):
+    for i, word in enumerate(claims_ten_specific_words):
         print("{}) '{}' -- {} times".format(i+1, word[0], word[1]))
     print("\n10 most specific words in premises:")
-    for i, word in enumerate(premises_common_words):
+    for i, word in enumerate(premises_ten_specific_words):
         print("{}) '{}' -- {} times".format(i+1, word[0], word[1]))
 
     stop = timeit.default_timer()
