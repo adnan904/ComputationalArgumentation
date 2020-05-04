@@ -1,6 +1,7 @@
 from os import listdir
 import json
 import os
+import re
 
 #############################################
 # PLEASE SET TO CORRECT PATH BEFORE RUNNING #
@@ -44,7 +45,7 @@ def get_entity_contents(file_content: str, entity_name: str) -> list:
     lines = file_content.split("\n")
     entity_content = []
     for line in lines:
-        if entity_name in line:
+        if re.search(r'\b' + entity_name + r'\b', line):
             line = line.split("\t")
             span_start = line[1].split(" ")[1]
             span_end = line[1].split(" ")[2]
