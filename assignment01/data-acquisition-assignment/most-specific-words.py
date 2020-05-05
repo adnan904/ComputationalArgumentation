@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[22]:
+# In[ ]:
 
 
 import spacy
@@ -12,7 +12,7 @@ from collections import Counter
 import numpy as np
 
 
-# In[23]:
+# In[ ]:
 
 
 #############################################
@@ -28,7 +28,7 @@ TRAIN_TEST_SPLIT_FILE_PATH = f'{CURRENT_WORKING_DIR}/code/data/train-test-split.
 nlp = spacy.load("en_core_web_sm")
 
 
-# In[24]:
+# In[ ]:
 
 
 def get_train_test_split_dict_and_num_essays():
@@ -50,7 +50,7 @@ def get_train_test_split_dict_and_num_essays():
         return num_essays, train_test_split_dict
 
 
-# In[25]:
+# In[ ]:
 
 
 def tf_score(document):
@@ -68,23 +68,23 @@ def tf_score(document):
     return words_freq
 
 
-# In[26]:
+# In[ ]:
 
 
 def idf_score(document, tf_score_all_arguments):
     idf_scores = {} 
     for argument in tf_score_all_arguments:
         for k in tf_score_all_arguments[argument].keys():
-            count = sum([k in tf_score_all_arguments[freq] for freq in tf_score_all_arguments])
+            count = sum([k in tf_score_all_arguments[argument_unit] for argument_unit in tf_score_all_arguments])
             idf_scores[k] = np.log(len(document)/count)
     return idf_scores
 
 
-# In[27]:
+# In[ ]:
 
 
 def tf_idf_score(document, idf_score_all_arguments, tf_score_all_arguments):
-    tf_idf_scores_document = {} #socre of all argument units such as major-claim, claims, premises  
+    tf_idf_scores_document = {} #score of all argument units such as major-claim, claims, premises  
     for argument_unit in document:
         tf_idf_scores = {}
         for k in tf_score_all_arguments[argument_unit]:
@@ -93,7 +93,7 @@ def tf_idf_score(document, idf_score_all_arguments, tf_score_all_arguments):
     return  tf_idf_scores_document
 
 
-# In[28]:
+# In[ ]:
 
 
 def pic_top_10_most_specific_words(tf_idf_scores):
@@ -104,7 +104,7 @@ def pic_top_10_most_specific_words(tf_idf_scores):
     
 
 
-# In[29]:
+# In[37]:
 
 
 def main():
@@ -149,13 +149,15 @@ def main():
     top_10_most_specific_words = pic_top_10_most_specific_words(tf_idf_scores)
         
     for element in top_10_most_specific_words:
-        print("'{}' -- {} 10 most specific words".format(element, top_10_most_specific_words[element]))
+        print("\n10 most specific words in : '{}' \n ".format(element))
+        for k, v in top_10_most_specific_words[element]:
+            print("\n{} : TF-IDF: {}".format(k, v))
     
     stop = timeit.default_timer()
     print('\nTime: ', stop - start)
 
 
-# In[30]:
+# In[38]:
 
 
 if __name__ == '__main__':
