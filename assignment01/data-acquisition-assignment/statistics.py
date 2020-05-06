@@ -38,6 +38,24 @@ def get_train_test_split_dict_and_num_essays():
         return num_essays, train_test_split_dict
 
 
+def tokenize_essay_text(all_essays_text: list):
+    """
+        splits essay tokens
+        :param all_essays_text, a combine list of all essays
+        :return: dict with essay tokens
+        """
+    essay_id = 0
+    all_essay_tokens = {}
+    for essay in all_essays_text:
+        tokens = nlp(essay)
+        words = [token.text.lower() for token in tokens
+                 if token.is_stop is not True and token.is_punct is not True]
+        all_essay_tokens[essay_id] = words
+        essay_id += 1
+    return Counter(all_essay_tokens)
+
+
+
 def tf_score(all_argument_units_text: dict):
     """
     Computes the TF score for each word in argument units
@@ -72,16 +90,13 @@ def idf(all_essays_text: list, tf_score_all_arguments: dict):
     :return dict of all words with IDF scores: 
     """
     all_idf_score = {}
+    all_essay_tokens = tokenize_essay_text(all_essays_text)
     # For each word appearing in the text of all claims, major claims , and premises - we check in how many essay texts
     # this word occurs to calculate the IDF-score of that word based on the above formula
     for argument_unit, words in tf_score_all_arguments.items():
         for word, _ in words.items():
             if word not in all_idf_score:
-                count = 0
-                for text in all_essays_text:
-                    text = text.lower()
-                    if re.search(r'\b' + word + r'\b', text):
-                        count += 1
+                count = sum([word in all_essay_tokens[essay_id] for essay_id in all_essay_tokens])
                 # In order to skip the weird words returned by nlp() which do not appear anywhere in the text(count = 0)
                 if count > 0:
                     all_idf_score[word] = np.log(len(all_essays_text) / count)
