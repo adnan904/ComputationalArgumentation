@@ -2,7 +2,7 @@ import spacy
 import os
 import json
 import timeit
-from collections import Counter
+from collections import Counter,defaultdict
 import numpy as np
 import re
 
@@ -45,15 +45,15 @@ def tokenize_essay_text(all_essays_text: list):
         :return: dict with essay tokens
         """
     essay_id = 0
-    all_essay_tokens = {}
+    all_essay_tokens = defaultdict(lambda: defaultdict(lambda: 0))
     for essay in all_essays_text:
         tokens = nlp(essay)
         words = [token.text.lower() for token in tokens
                  if token.is_stop is not True and token.is_punct is not True]
-        all_essay_tokens[essay_id] = words
+        for word in words:
+            all_essay_tokens[essay_id][word] += 1
         essay_id += 1
-    return Counter(all_essay_tokens)
-
+    return all_essay_tokens
 
 
 def tf_score(all_argument_units_text: dict):
