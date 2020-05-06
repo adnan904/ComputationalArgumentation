@@ -4,6 +4,7 @@ import json
 import timeit
 from collections import Counter
 import numpy as np
+import re
 
 #############################################
 # PLEASE SET TO CORRECT PATH BEFORE RUNNING #
@@ -37,133 +38,75 @@ def get_train_test_split_dict_and_num_essays():
         return num_essays, train_test_split_dict
 
 
-def get_most_common_words(text_list: list):
+def tf_score(all_argument_units_text: dict):
     """
-    Gets a list of  sentences. It performs the following on them:
-        - Joins the sentences to a single text string
-        - Tokenize's the text using the spaCy library
-        - Filters the tokens that are not stop-words(e.g. and, a, is, the, which etc) or punctuation
-        - converts the tokens to lowercase so that e.g people and People are not counted separately
-        - Calculates the frequency of all the remaining words
-        - Filters the most common words
-        - Returns a list of tuples of the form (word, frequency) and a set of unique words occurring in the text
-    :param text_list: a list of lowercase sentences
-    :return: a list most common tuples of the form (word, frequency), and a set of unique words occurring in the text
+    Computes the TF score for each word in argument units
+    tf(t) = count of t in argument_unit_text / number of words in argument_unit_text
+
+    :param all_argument_units_text: text list of all 3 argument units in the train-split essays placed in a dict
+    :return dict of all words with TF scores:
     """
-    text = '. '.join(text_list)
-    tokens = nlp(text)
-    words = [token.text.lower() for token in tokens
-             if token.is_stop is not True and token.is_punct is not True]
-    words_set = set(words)
-    words_freq = Counter(words)
-    common_words = words_freq.most_common(len(words))
-    return common_words, words_set
+    words_freq = {}
+    for k, v in all_argument_units_text.items():
+        text = ' '.join(v)
+        tokens = nlp(text)
+        # nlp function returns some weird words like 'wo', 'educatio' etc which do not exist anywhere in the text
+        # and their IDF score cannot be computed
+        words = [token.text.lower() for token in tokens
+                 if token.is_stop is not True and token.is_punct is not True]
+        word_count = Counter(words)
+        tf_scores = {}
+        for w in word_count:
+            tf_scores[w] = word_count[w] / len(words)
+        words_freq[k] = tf_scores
+    return words_freq
 
 
-def get_specific_words(counter, set1, set2):
-    count = 0
-    ten_most_specific_tuple = []
-
-    for word in counter:
-        if count >= 10:
-            break
-        if word[0] not in set1 and word[0] not in set2:
-            ten_most_specific_tuple.append(word)
-            count += 1
-    return ten_most_specific_tuple
-
-
-def get_all_specific_words(IDF, major_claims_if_idf_scores, claims_if_idf_scores, premises_if_idf_scores):
+def idf(all_essays_text: list, tf_score_all_arguments: dict):
     """
-    Creates dict with highest if_idf scores for al argument units
+    Computes the IDF score for each word in  claims, major_claims, premises of all essays
+    idf(t) = log_e(Total number of documents / Number of documents with term t in it)
 
-    :param IDF: dict with all words in the text of all essays
-    :param major_claims_if_idf_scores: dict with idf-scores for major claims
-    :param claims_if_idf_scores: dict with idf-scores for claims
-    :param premises_if_idf_scores: dict with idf-scores for premises
-
-    :return dicts with the highest IF-IDF scores -> most specific words for each argument type
-    """
-    most_specific_major_claims = {}
-    most_specific_claims = {}
-    most_specific_premises = {}
-    for word in IDF:
-        if_idf_score_major_claims = major_claims_if_idf_scores[word]
-        if_idf_score_claims = claims_if_idf_scores[word]
-        if_idf_score_premises = premises_if_idf_scores[word]
-
-        if if_idf_score_major_claims > if_idf_score_claims and if_idf_score_major_claims > if_idf_score_premises:
-            # if_idf_score_major_claims has the highest score
-            most_specific_major_claims[word] = if_idf_score_major_claims
-        elif if_idf_score_claims > if_idf_score_major_claims and if_idf_score_claims > if_idf_score_premises:
-            # if_idf_score_claims has the highest score
-            most_specific_claims[word] = if_idf_score_claims
-        elif if_idf_score_premises > if_idf_score_major_claims and if_idf_score_premises > if_idf_score_claims:
-            # if_idf_score_premises has the highest score
-            most_specific_premises[word] = if_idf_score_premises
-
-    return most_specific_major_claims, most_specific_claims, most_specific_premises
-
-def idf(document_text: list):
-    """
-    Computes the IDF score for each word in all all text of all essays
-    idf(t) = log(N/(df + 1))
-
-    :param document_text: concatenated text of all texts of all essays
+    :param all_essays_text: list of texts of all train-split essays
+    :param tf_score_all_arguments: a dict of tf scores for each word in claims, major_claims, premises
     :return dict of all words with IDF scores: 
     """
-    text = '. '.join(document_text)
-    tokens = nlp(text)
-    words = [token.text.lower() for token in tokens
-             if token.is_stop is not True and token.is_punct is not True]
-     # df(t) = occurrence of t in documents
-    df_scores = Counter(words)
+    all_idf_score = {}
+    # For each word appearing in the text of all claims, major claims , and premises - we check in how many essay texts
+    # this word occurs to calculate the IDF-score of that word based on the above formula
+    for argument_unit, words in tf_score_all_arguments.items():
+        for word, _ in words.items():
+            if word not in all_idf_score:
+                count = 0
+                for text in all_essays_text:
+                    text = text.lower()
+                    if re.search(r'\b' + word + r'\b', text):
+                        count += 1
+                # In order to skip the weird words returned by nlp() which do not appear anywhere in the text(count = 0)
+                if count > 0:
+                    all_idf_score[word] = np.log(len(all_essays_text) / count)
+    return all_idf_score
 
-    # idf(t) = log(N/(df + 1))
-    idf_scores = {}    
-    for w in df_scores:
-        idf_scores[w] = np.log(len(words)/(df_scores[w]+1))
 
-    return Counter(idf_scores)
-
-
-def tf(argument_unit_text: list):
+def tf_idf(tf_score_all_arguments, idf_scores):
     """
-    Computes the TF score for each word in argument unit
-    tf(t,d) = count of t in argument_unit_text / number of words in argument_unit_text
+    Computes the TF-IDF score for each word in argument units: claims|major_claims|premises
+    tf-idf(t) = tf(t) * idf(t)
 
-    :param argument_unit_text_list: concatenated text of all major claims in the essays
-    :return dict of all words with TF scores: 
-    """
-    tokens = nlp(argument_unit_text)
-    words = [token.text.lower() for token in tokens
-             if token.is_stop is not True and token.is_punct is not True]
-    freq = Counter(words)
-    tf_scores = {}
-    for w in freq:
-        tf_scores[w] = freq[w] / len(words)
-    return Counter(tf_scores)
-
-
-def tf_idf(argument_unit_text: list, idf_scores):
-    """
-    Computes the TF-IDF score for each word in argument unit
-    argument unit = major claim, claim, premises
-    tf-idf(t, d) = tf(t, d) * log(N/(df + 1))    
-
-    :param argument_unit_text_list: concatenated text of all major claims in the essays
-    :param IDF: IDF value of the whole text of all essays
+    :param tf_score_all_arguments: tf scores of all words in the argument units: claims, major-claims, premises
+    :param idf_scores: IDF value of the each word in the argument units: claims, major-claims, premises
     :return dict with all words and their TF-IDF scores for current argument unit: 
     """
-    tf_scores = tf(argument_unit_text)
     
     tf_idf_scores = {}
-    for w in tf_scores:
-         tf_idf_scores[w] = tf_scores[w] * idf_scores[w]
-    
-    return Counter(tf_idf_scores)
-
-
+    for argument_unit, words in tf_score_all_arguments.items():
+        words_dict = {}
+        for word, term_freq_score in words.items():
+            # In order to skip the weird words returned by nlp() which do not appear anywhere in the text(count = 0)
+            if idf_scores.get(word):
+                words_dict[word] = term_freq_score * idf_scores[word]
+        tf_idf_scores[argument_unit] = words_dict
+    return tf_idf_scores
 
 
 def main():
@@ -182,7 +125,8 @@ def main():
     num_of_tokens_in_major_claims = 0
     num_of_tokens_in_claims = 0
     num_of_tokens_in_premises = 0
-    documents_text = []
+    all_essays_text = []
+    all_argument_units_text = {}
     major_claims_text = []
     claims_text = []
     premises_text = []
@@ -215,8 +159,8 @@ def main():
                     else:
                         num_of_insuff_paras += 1
 
-                 # append the whole text to documents text for calculating DF score
-                documents_text.append(essay['text'])     
+                # append the whole text to documents text for calculating DF score
+                all_essays_text.append(essay['text'])
 
                 # Tokenizing using the nlp() of the spaCy library
                 # Appending the text of the argument unit to a list
@@ -235,41 +179,24 @@ def main():
         avg_num_of_tokens_in_premises = num_of_tokens_in_premises / num_of_premises
 
         # Calculating the 10 most specific words in major_claims, claims, and premises
-        # Getting the words_frequency and a set of unique words
-        major_claims_common_words, major_claims_words_set = get_most_common_words(major_claims_text)
-        claims_common_words, claims_words_set = get_most_common_words(claims_text)
-        premises_common_words, premises_words_set = get_most_common_words(premises_text)
 
-        # calculate IDF score for each word in the whole text of all essays 
-        idf_scores = idf(documents_text)        
+        all_argument_units_text['major_claim'] = major_claims_text
+        all_argument_units_text['claims'] = claims_text
+        all_argument_units_text['premises'] = premises_text
 
-        # prepare texts for if-idf calculation
-        major_claims_text = '. '.join(major_claims_text) 
-        claims_text = '. '.join(claims_text) 
-        premises_text = '. '.join(premises_text) 
-  
-        # calculate IF-IDF score for all words in major claims | claims | premises
-        major_claims_tf_idf_scores = tf_idf(major_claims_text, idf_scores)
-        claims_tf_idf_scores = tf_idf(claims_text, idf_scores)
-        premises_tf_idf_scores = tf_idf(premises_text, idf_scores)
+        # calculating tf_score for all 3 argument units: major claims | claims | premises
+        tf_score_all_arguments = tf_score(all_argument_units_text)
 
-        # get specific words -> create lists with highest tf-idf score for each word
-        major_claims_specific_words, claims_specific_words, premises_specific_words = get_all_specific_words(idf_scores, major_claims_tf_idf_scores, claims_tf_idf_scores, premises_tf_idf_scores)
+        # calculate IDF score for each word in the whole text of all claims, major-claims and premises
+        idf_scores = idf(all_essays_text, tf_score_all_arguments)
+
+        # calculate TF-IDF score for all words in major claims | claims | premises
+        all_tf_idf_scores = tf_idf(tf_score_all_arguments, idf_scores)
 
         # get the top 10 scores for each 
-        major_claims_ten_specific_words = Counter(major_claims_specific_words).most_common(10)
-        claims_ten_specific_words = Counter(claims_specific_words).most_common(10)
-        premises_ten_specific_words = Counter(premises_specific_words).most_common(10)
-
-
-        # We iterate through the most frequently occurring words and then check if they occur in the other argument unit
-        # or not. If they do we skip them and continue this until we have 10 most specific words
-        major_claims_ten_common_words = get_specific_words(major_claims_common_words, claims_words_set,
-                                                             premises_words_set)
-        claims_ten_common_words = get_specific_words(claims_common_words, major_claims_words_set,
-                                                       premises_words_set)
-        premises_ten_common_words = get_specific_words(premises_common_words, major_claims_words_set,
-                                                         claims_words_set)
+        major_claims_ten_specific_words = Counter(all_tf_idf_scores['major_claim']).most_common(10)
+        claims_ten_specific_words = Counter(all_tf_idf_scores['claims']).most_common(10)
+        premises_ten_specific_words = Counter(all_tf_idf_scores['premises']).most_common(10)
 
     print("The Preliminary Statistics are:")
     print("Number of essays: {}".format(num_of_essays))
@@ -287,16 +214,6 @@ def main():
     print("Average number of tokens in claims: {}".format(avg_num_of_tokens_in_claims))
     print("Average number of tokens in premises: {}".format(avg_num_of_tokens_in_premises))
 
-    print("\n10 most common words in major claims:")
-    for i, word in enumerate(major_claims_ten_common_words):
-        print("{}) '{}' -- {} times".format(i+1, word[0], word[1]))
-    print("\n10 most common words in claims:")
-    for i, word in enumerate(claims_ten_common_words):
-        print("{}) '{}' -- {} times".format(i+1, word[0], word[1]))
-    print("\n10 most common words in premises:")
-    for i, word in enumerate(premises_ten_common_words):
-        print("{}) '{}' -- {} times".format(i+1, word[0], word[1]))
-
     print("\n10 most specific words in major claims:")
     for i, word in enumerate(major_claims_ten_specific_words):
         print("{}) '{}' -- TF-IDF score: {}".format(i+1, word[0], word[1]))
@@ -306,7 +223,6 @@ def main():
     print("\n10 most specific words in premises:")
     for i, word in enumerate(premises_ten_specific_words):
         print("{}) '{}' -- TF-IDF score: {}".format(i+1, word[0], word[1]))
-
 
     stop = timeit.default_timer()
     print('\nTime: ', stop - start)
