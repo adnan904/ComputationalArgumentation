@@ -38,36 +38,31 @@ def get_train_test_split_dict_and_num_essays():
         return num_essays, train_test_split_dict
 
 
-def tokenize_essay_text(all_essays_text: list):
+def get_token_count_dict(all_essays_tokens: dict):
     """
         splits essay tokens
-        :param all_essays_text, a combine list of all essays
+        :param all_essays_tokens, a dict of tokens of all essays
         :return: dict with essay tokens
         """
-    essay_id = 0
     all_essay_tokens = defaultdict(lambda: defaultdict(lambda: 0))
-    for essay in all_essays_text:
-        tokens = nlp(essay)
+    for essay_id, tokens in all_essays_tokens.items():
         words = [token.text.lower() for token in tokens
                  if token.is_stop is not True and token.is_punct is not True]
         for word in words:
             all_essay_tokens[essay_id][word] += 1
-        essay_id += 1
     return all_essay_tokens
 
 
-def tf_score(all_argument_units_text: dict):
+def tf_score(all_argument_units_tokens: dict):
     """
     Computes the TF score for each word in argument units
     tf(t) = count of t in argument_unit_text / number of words in argument_unit_text
 
-    :param all_argument_units_text: text list of all 3 argument units in the train-split essays placed in a dict
+    :param all_argument_units_tokens: tokens list of all 3 argument units in the train-split essays placed in a dict
     :return dict of all words with TF scores:
     """
     words_freq = {}
-    for k, v in all_argument_units_text.items():
-        text = ' '.join(v)
-        tokens = nlp(text)
+    for k, tokens in all_argument_units_tokens.items():
         # nlp function returns some weird words like 'wo', 'educatio' etc which do not exist anywhere in the text
         # and their IDF score cannot be computed
         words = [token.text.lower() for token in tokens
@@ -80,26 +75,26 @@ def tf_score(all_argument_units_text: dict):
     return words_freq
 
 
-def idf(all_essays_text: list, tf_score_all_arguments: dict):
+def idf(all_essays_tokens: dict, tf_score_all_arguments: dict):
     """
     Computes the IDF score for each word in  claims, major_claims, premises of all essays
     idf(t) = log_e(Total number of documents / Number of documents with term t in it)
 
-    :param all_essays_text: list of texts of all train-split essays
+    :param all_essays_tokens: dict of tokens of all train-split essays
     :param tf_score_all_arguments: a dict of tf scores for each word in claims, major_claims, premises
     :return dict of all words with IDF scores: 
     """
     all_idf_score = {}
-    all_essay_tokens = tokenize_essay_text(all_essays_text)
+    all_essay_tokens = get_token_count_dict(all_essays_tokens)
     # For each word appearing in the text of all claims, major claims , and premises - we check in how many essay texts
     # this word occurs to calculate the IDF-score of that word based on the above formula
     for argument_unit, words in tf_score_all_arguments.items():
         for word, _ in words.items():
             if word not in all_idf_score:
-                count = sum([word in all_essay_tokens[essay_id] for essay_id in all_essay_tokens])
+                count = sum([word in all_essay_tokens[essay_id] for essay_id in all_essay_tokens.keys()])
                 # In order to skip the weird words returned by nlp() which do not appear anywhere in the text(count = 0)
                 if count > 0:
-                    all_idf_score[word] = np.log(len(all_essays_text) / count)
+                    all_idf_score[word] = np.log(len(all_essays_tokens) / count)
     return all_idf_score
 
 
@@ -137,11 +132,8 @@ def main():
     num_of_essays_without_conf_bias = 0
     num_of_suff_paras = 0
     num_of_insuff_paras = 0
-    num_of_tokens_in_major_claims = 0
-    num_of_tokens_in_claims = 0
-    num_of_tokens_in_premises = 0
-    all_essays_text = []
-    all_argument_units_text = {}
+    all_essays_tokens = {}
+    all_argument_units_tokens = {}
     major_claims_text = []
     claims_text = []
     premises_text = []
@@ -157,6 +149,7 @@ def main():
             if train_test_split_dict[essay['id']] == 'TRAIN':
                 # Tokenizing the text for the essay using the spaCy library
                 text = nlp(essay['text'])
+                all_essays_tokens[essay['id']] = text
                 num_of_paragraphs += len(essay['paragraphs'])
                 # Using the spaCy library for calculating Sentences in the text
                 num_of_sentences += len(list(text.sents))
@@ -174,36 +167,32 @@ def main():
                     else:
                         num_of_insuff_paras += 1
 
-                # append the whole text to documents text for calculating DF score
-                all_essays_text.append(essay['text'])
-
                 # Tokenizing using the nlp() of the spaCy library
                 # Appending the text of the argument unit to a list
                 for major_claim in essay['major_claim']:
-                    num_of_tokens_in_major_claims += len(nlp(major_claim['text']))
                     major_claims_text.append(major_claim['text'])
                 for claim in essay['claims']:
-                    num_of_tokens_in_claims += len(nlp(claim['text']))
                     claims_text.append(claim['text'])
                 for premise in essay['premises']:
-                    num_of_tokens_in_premises += len(nlp(premise['text']))
                     premises_text.append(premise['text'])
+        # Generating the argument_units tokens using spaCy library's nlp()
+        major_claims_tokens = nlp(' '.join(major_claims_text))
+        claims_tokens = nlp(' '.join(claims_text))
+        premises_tokens = nlp(' '.join(premises_text))
+        all_argument_units_tokens['major_claim'] = major_claims_tokens
+        all_argument_units_tokens['claims'] = claims_tokens
+        all_argument_units_tokens['premises'] = premises_tokens
+
         # Calculating the avg. number of tokens in major_claims, claims, and premises
-        avg_num_of_tokens_in_major_claims = num_of_tokens_in_major_claims / num_of_major_claims
-        avg_num_of_tokens_in_claims = num_of_tokens_in_claims / num_of_claims
-        avg_num_of_tokens_in_premises = num_of_tokens_in_premises / num_of_premises
+        avg_num_of_tokens_in_major_claims = len(major_claims_tokens) / num_of_major_claims
+        avg_num_of_tokens_in_claims = len(claims_tokens) / num_of_claims
+        avg_num_of_tokens_in_premises = len(premises_tokens) / num_of_premises
 
-        # Calculating the 10 most specific words in major_claims, claims, and premises
-
-        all_argument_units_text['major_claim'] = major_claims_text
-        all_argument_units_text['claims'] = claims_text
-        all_argument_units_text['premises'] = premises_text
-
-        # calculating tf_score for all 3 argument units: major claims | claims | premises
-        tf_score_all_arguments = tf_score(all_argument_units_text)
+        # Calculating tf_score for all 3 argument units: major claims | claims | premises
+        tf_score_all_arguments = tf_score(all_argument_units_tokens)
 
         # calculate IDF score for each word in the whole text of all claims, major-claims and premises
-        idf_scores = idf(all_essays_text, tf_score_all_arguments)
+        idf_scores = idf(all_essays_tokens, tf_score_all_arguments)
 
         # calculate TF-IDF score for all words in major claims | claims | premises
         all_tf_idf_scores = tf_idf(tf_score_all_arguments, idf_scores)
