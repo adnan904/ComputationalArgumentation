@@ -2,9 +2,8 @@ import spacy
 import os
 import json
 import timeit
-from collections import Counter,defaultdict
+from collections import Counter, defaultdict
 import numpy as np
-import re
 
 #############################################
 # PLEASE SET TO CORRECT PATH BEFORE RUNNING #

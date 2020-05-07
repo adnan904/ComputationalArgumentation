@@ -140,6 +140,7 @@ def main():
         outfile.write(json_dump)
     print("Successfully created unified data in '/data/unified_data.json'.")
 
+
 # run main function
 if __name__ == '__main__':
     main()
