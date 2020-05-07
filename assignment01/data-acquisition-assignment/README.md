@@ -3,11 +3,11 @@
 ### Download corpora:
 
 - Argument Annotated Essays (version 2) : 
-https://www.informatik.tudarmstadt.de/ukp/research_6/data/argumentation_mining_1/argument_annotated_essays_version_2/index.en.jsp
+https://www.informatik.tu-darmstadt.de/ukp/research_6/data/argumentation_mining_1/argument_annotated_essays_version_2/index.en.jsp
 - Insufficiently Supported Arguments in Argumentative Essays: 
-https://www.informatik.tudarmstadt.de/ukp/research_6/data/argumentation_mining_1/insufficiently_supported_arguments/index.en.jsp
+https://www.informatik.tu-darmstadt.de/ukp/research_6/data/argumentation_mining_1/insufficiently_supported_arguments/index.en.jsp
 - Opposing Arguments in Persuasive Essays: 
-https://www.informatik.tudarmstadt.de/ukp/research_6/data/argumentation_mining_1/opposing_arguments_in_persuasive_essays/index.en.jsp
+https://www.informatik.tu-darmstadt.de/ukp/research_6/data/argumentation_mining_1/opposing_arguments_in_persuasive_essays/index.en.jsp
 
 
 Corpora Unification: Each object represents an essay that contains:
