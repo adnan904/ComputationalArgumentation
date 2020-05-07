@@ -100,7 +100,7 @@ def get_all_essay_data() -> list:
     all_output_elements = []
     # go through all essayXXX.txt files and gather all corresponding information
     for fileName in essay_texts:
-        text_file = open(CONST_ESSAYPATH + fileName, "r")
+        text_file = open(CONST_ESSAYPATH + fileName, "r", encoding="utf8")
         file_id = fileName.split("essay")[1].split(".txt")[0]  # get ID of current file
 
         # read text-file and clean
