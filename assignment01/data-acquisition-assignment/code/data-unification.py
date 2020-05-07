@@ -135,7 +135,7 @@ def main():
     print("Started to create the unified data file...")
     all_essay_data = get_all_essay_data()
     # write
-    json_dump = json.dumps([element.__dict__ for element in all_essay_data], indent=4)
+    json_dump = json.dumps([element.__dict__ for element in all_essay_data], indent=4, ensure_ascii=False)
     with open(f'{CURRENT_WORKING_DIR}/../data/unified_data.json', "w") as outfile:
         outfile.write(json_dump)
     print("Successfully created unified data in '/data/unified_data.json'.")
