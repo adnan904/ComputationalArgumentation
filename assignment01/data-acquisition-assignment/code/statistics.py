@@ -8,7 +8,7 @@ import numpy as np
 #############################################
 # PLEASE SET TO CORRECT PATH BEFORE RUNNING #
 #############################################
-CURRENT_WORKING_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname("__file__")))
+CURRENT_WORKING_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 UNIFIED_DATA_FILE_PATH = f'{CURRENT_WORKING_DIR}/../data/unified_data.json'
 TRAIN_TEST_SPLIT_FILE_PATH = f'{CURRENT_WORKING_DIR}/../data/train-test-split.csv'
 
