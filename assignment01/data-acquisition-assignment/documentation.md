@@ -103,18 +103,46 @@ Therefore, the `TF-IDF` score will be very low.
 Consequently, we get only a high `TF-IDF` score, if the frequency of the word `w` is very high in an argument unit and the word `w` is not used very often in other argument/non-argument units.
 Therefore, we have calculated the `most specific words` which are very frequent for each argument unit but less frequent in overall train-split corpus/essays.
 
-Specific examples would be the following:  
-1. The word `students` appears as follows:  
-`major_claims` = 45 times  
-`claims` = 112 times  
-`premises` = 236 times  
-`Number of essay texts with word 'students' in it` = 85  
-So the balance between the TF-score and the IDF-score is causing it to appear in all three.  
+Specific examples would be the following:
 
-2. The word `people` appears as follows:  
-`major_claims` = 79 times  
-`claims` = 208 times  
-`premises` = 435 times  
-`Number of essay texts with word 'people' in it` = 276  
-Since it appears in so many essay texts it gets a really low IDF-score and hence is not considered in Top 10 of `most specific words`.
+1. The word `students` appears as follows:
 
+```
+    major_claims = 45 times
+    claims = 112 times
+    premises = 236 times
+    Number of essay texts with word 'students' in it = 85
+
+    IDF score = ln(322/85) = 1.33
+
+    TF score for major_claims = 45/8788 = .0051
+    TF score for claims = 112/18139 = .0062
+    TF score for premises = 236/53211 = .0044
+
+    TF-IDF score for major_claims = .0051*1.33 = .0082
+    TF-IDF score for claims = .0062*1.33 = .0068
+    TF-IDF score for premises = .0044*1.33 = .0058
+```
+
+Since the word appears frequently in all argument units and also not that frequently in whole of the train-split corpus/essays, it gets a high TF-IDF score in all 3 argument units and is chosen as top-10 specific word for each.
+
+2. The word `people` appears as follows:
+
+```
+    major_claims = 79 times
+    claims = 208 times
+    premises = 435 times
+    Number of essay texts with word 'people' in it = 276
+
+    IDF score = ln(322/276) = 0.15
+
+    TF score for major_claims = 79/8788 = .009
+    TF score for claims = 208/18139 = .0115
+    TF score for premises = 435/53211 = .0082
+
+    TF-IDF score for major_claims = .009*0.15 = .0013
+    TF-IDF score for claims = .0115*0.15 = .0017
+    TF-IDF score for premises = .0082*0.15 = .0012
+```
+
+Even though it appears frequently in each argument unit, it also appears in so many essay texts and hence gets a really low IDF-score and hence is not considered in Top 10 of `most specific words`.
