@@ -102,3 +102,19 @@ So for example if a word `w` appears very often in an `argument unit`, it leads 
 Therefore, the `TF-IDF` score will be very low.
 Consequently, we get only a high `TF-IDF` score, if the frequency of the word `w` is very high in an argument unit and the word `w` is not used very often in other argument/non-argument units.
 Therefore, we have calculated the `most specific words` which are very frequent for each argument unit but less frequent in overall train-split corpus/essays.
+
+Specific examples would be the following:  
+1. The word `students` appears as follows:  
+`major_claims` = 45 times  
+`claims` = 112 times  
+`premises` = 236 times  
+`Number of essay texts with word 'students' in it` = 85  
+So the balance between the TF-score and the IDF-score is causing it to appear in all three.  
+
+2. The word `people` appears as follows:  
+`major_claims` = 79 times  
+`claims` = 208 times  
+`premises` = 435 times  
+`Number of essay texts with word 'people' in it` = 276  
+Since it appears in so many essay texts it gets a really low IDF-score and hence is not considered in Top 10 of `most specific words`.
+
