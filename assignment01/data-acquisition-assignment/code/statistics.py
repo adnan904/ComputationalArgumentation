@@ -62,14 +62,14 @@ def tf_score(all_argument_units_tokens: dict):
     """
     words_freq = {}
     for k, tokens in all_argument_units_tokens.items():
-        # nlp function returns some weird words like 'wo', 'educatio' etc which do not exist anywhere in the text
+        # nlp function returns some weird words like 'educatio' etc which do not exist anywhere in the text
         # and their IDF score cannot be computed
         words = [token.text.lower() for token in tokens
                  if token.is_stop is not True and token.is_punct is not True]
         word_count = Counter(words)
         tf_scores = {}
         for w in word_count:
-            tf_scores[w] = word_count[w] / len(words)
+            tf_scores[w] = word_count[w] / len(tokens)
         words_freq[k] = tf_scores
     return words_freq
 

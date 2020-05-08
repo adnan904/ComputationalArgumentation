@@ -89,16 +89,16 @@ So in our application:
 - For `IDF`:
 
 ```
-Total number of documents = total number of essays = 322
+Total number of documents = total number of essays in train-split = 322
 ```
 
 And
 
 ```
-Number of documents with term t in it  = number of essay texts with term t in it.
+Number of documents with term t in it  = number of essay texts in train-split with term t in it.
 ```
 
 So for example if a word `w` appears very often in an `argument unit`, it leads to a high TF score but if it also appears very often in other argument/non-argument unit(s) the IDF score will be very low.
 Therefore, the `TF-IDF` score will be very low.
 Consequently, we get only a high `TF-IDF` score, if the frequency of the word `w` is very high in an argument unit and the word `w` is not used very often in other argument/non-argument units.
-Therefore, we have calculated the `most specific words` which are very important for each argument unit and also very specifically used for that argument unit.
+Therefore, we have calculated the `most specific words` which are very frequent for each argument unit but less frequent in overall train-split corpus/essays.
