@@ -28,6 +28,7 @@
 
 - Make sure you have the same file structure as above(otherwise set the paths at the beginning of `data-unification.py` and `preliminary-statistics.ipynb`)
 - Install on a `venv` the packages listed in the `requirements.txt`
+- Make sure that `en_core_web_sm` is available. Download it via `python -m spacy download en_core_web_sm`
 - The unified data is saved in the file: `/data/unified_data.json`.
 - To reproduce the file, run the `data-unification.py` in the `code` folder with the following command:
 
