@@ -1,6 +1,7 @@
 import json
 import os
 import pandas as pd
+from convert_to_bio import convert_to_bio  # make sure 'convert_to_bio.py' and the current file are in the same folder
 
 CURRENT_WORKING_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 CORPUS_PATH = f'{CURRENT_WORKING_DIR}/data/essay_corpus.json'
@@ -47,12 +48,10 @@ if __name__ == "__main__":
     # Read train_test_split as panda data-frame
     train_test_split_file = pd.read_csv(SPLIT_FILE_PATH, sep=';')
     test, train = train_test_split(json_corpus, train_test_split_file)
-    train_json_dump = json.dumps(train, indent=4, ensure_ascii=False)
-    test_json_dump = json.dumps(test, indent=4, ensure_ascii=False)
-    with open(f'{CURRENT_WORKING_DIR}/data/train_split.json', "w") as train_file:
-        train_file.write(train_json_dump)
-    with open(f'{CURRENT_WORKING_DIR}/data/test_split.json', "w") as test_file:
-        test_file.write(test_json_dump)
-    print(len(train))
-    print(len(test))
-    print("Successfully created train and test data in '/data/'.")
+    train_bio = convert_to_bio(train)
+    test_bio = convert_to_bio(test)
+    with open(f'{CURRENT_WORKING_DIR}/data/train_BIO.txt', "w") as train_file:
+        train_file.write(''.join(train_bio))
+    with open(f'{CURRENT_WORKING_DIR}/data/test_BIO.txt', "w") as test_file:
+        test_file.write(''.join(test_bio))
+    print("Successfully created train and test Bio in '/data/'.")
