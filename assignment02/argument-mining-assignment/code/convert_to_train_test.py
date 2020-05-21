@@ -3,7 +3,7 @@ import os
 import pandas as pd
 
 CURRENT_WORKING_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-CORPUS_PATH = f'{CURRENT_WORKING_DIR}/data/unified_data.json'
+CORPUS_PATH = f'{CURRENT_WORKING_DIR}/data/essay_corpus.json'
 SPLIT_FILE_PATH = f'{CURRENT_WORKING_DIR}/data/train-test-split.csv'
 
 
@@ -36,7 +36,7 @@ def search_and_extract_data(all_json_data, split_type_data) -> list:
     extracted_data = []
     for essay_id in split_type_data['ID']:
         for essay in all_json_data:
-            if essay_id.split('essay')[1] == essay['id']:
+            if int(essay_id.split('essay')[1]) == essay['id']:
                 extracted_data = extracted_data + [essay]
     return extracted_data
 
@@ -46,7 +46,13 @@ if __name__ == "__main__":
 
     # Read train_test_split as panda data-frame
     train_test_split_file = pd.read_csv(SPLIT_FILE_PATH, sep=';')
-    train, test = train_test_split(json_corpus, train_test_split_file)
-
+    test, train = train_test_split(json_corpus, train_test_split_file)
+    train_json_dump = json.dumps(train, indent=4, ensure_ascii=False)
+    test_json_dump = json.dumps(test, indent=4, ensure_ascii=False)
+    with open(f'{CURRENT_WORKING_DIR}/data/train_split.json', "w") as train_file:
+        train_file.write(train_json_dump)
+    with open(f'{CURRENT_WORKING_DIR}/data/test_split.json', "w") as test_file:
+        test_file.write(test_json_dump)
     print(len(train))
     print(len(test))
+    print("Successfully created train and test data in '/data/'.")

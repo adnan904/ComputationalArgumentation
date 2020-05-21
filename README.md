@@ -67,6 +67,12 @@ pip list
 python3.6 -m spacy download en_core_web_sm
 ```
 
+- Install the nltk language pack(while the venv is activated):
+
+```
+python3.6 -m nltk.downloader 'punkt'
+```
+
 - Install Jupyter Notebook(while the venv is activated):
 
 ```
