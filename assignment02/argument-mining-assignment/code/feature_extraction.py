@@ -1,0 +1,70 @@
+import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer
+from gensim.models import Word2Vec
+import os
+import numpy as np
+from sklearn import linear_model
+from sklearn.metrics import accuracy_score
+
+CURRENT_WORKING_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname("__file__")))
+TRAINING_DATA_PATH = f'{CURRENT_WORKING_DIR}/data/train_BIO.txt'
+TEST_DATA_PATH = f'{CURRENT_WORKING_DIR}/data/test_BIO.txt'
+
+
+def predict(vectorizer, classifier, data):
+    data_features = vectorizer.transform(data)
+    predictions = classifier.predict(data_features)
+    return predictions
+
+
+def get_sentences(tokens):
+    '''
+
+    :param tokens: all the tokens in lowercase from a BIO file
+    :return: a list of paragraphs from from the file
+    '''
+    sentences_list = []
+    sentence = []
+    for token in tokens:
+        if token == '__end_paragraph__':
+            if len(sentence) > 0:
+                sentences_list.append(sentence)
+                sentence = []
+        elif token == '__end_essay__' or token == 'nan':
+            continue
+        else:
+            sentence.append(token)
+    return sentences_list
+
+
+if __name__ == '__main__':
+    train_df = pd.read_csv(TRAINING_DATA_PATH, names=['token', 'tag'], sep='\t', skipinitialspace=True, quotechar='"')
+    train_tokens = train_df['token'].replace("\t", "", regex=True).replace("\n", "", regex=True)
+    train_tokens_lowercase = np.array([x.lower() if isinstance(x, str) else x for x in train_tokens]).astype('U')
+    train_tags = train_df['tag'].astype('U')
+    test_df = pd.read_csv(TEST_DATA_PATH, names=['token', 'tag'], sep='\t', skipinitialspace=True, quotechar='"')
+    test_tokens = test_df['token']
+    test_tokens_lowercase = np.array([x.lower() if isinstance(x, str) else x for x in test_tokens]).astype('U')
+    test_tags = test_df['tag'].astype('U')
+    count_vectorizer = CountVectorizer(
+        analyzer="word", preprocessor=None, lowercase=True)
+
+    # BoW for training data
+    train_data_bag_of_words = count_vectorizer.fit_transform(train_tokens_lowercase)
+    # cv = count_vectorizer.vocabulary_
+
+    # Logistic Regression for our model with bag-of-words features
+    logreg = linear_model.LogisticRegression(n_jobs=4, C=1e5, max_iter=100)
+    logreg = logreg.fit(train_data_bag_of_words, train_tags)
+    y_pred = predict(count_vectorizer, logreg, test_tokens_lowercase)
+    print('accuracy %s' % accuracy_score(y_pred, test_tags))
+
+    # Word-Embeddings
+    sentences = get_sentences(train_tokens_lowercase)
+    model = Word2Vec(sentences, min_count=1, size=100, window=10)
+    words = list(model.wv.vocab)
+    # access vector for one word
+    print(model['should'])
+    # find most_similar for 'should'
+    result = model.most_similar(positive=['should'], topn=1)
+    print(result)
