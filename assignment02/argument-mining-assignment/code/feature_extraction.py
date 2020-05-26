@@ -4,7 +4,9 @@ from gensim.models import Word2Vec
 import os
 import numpy as np
 from sklearn import linear_model
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, f1_score
+import random
+
 
 CURRENT_WORKING_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname("__file__")))
 TRAINING_DATA_PATH = f'{CURRENT_WORKING_DIR}/data/train_BIO.txt'
@@ -46,6 +48,8 @@ if __name__ == '__main__':
     test_tokens = test_df['token']
     test_tokens_lowercase = np.array([x.lower() if isinstance(x, str) else x for x in test_tokens]).astype('U')
     test_tags = test_df['tag'].astype('U')
+    # Class Distribution. Mostly I-PREMISE and O are majority_classes
+    print(test_df.tag.value_counts())
     count_vectorizer = CountVectorizer(
         analyzer="word", preprocessor=None, lowercase=True)
 
@@ -58,6 +62,23 @@ if __name__ == '__main__':
     logreg = logreg.fit(train_data_bag_of_words, train_tags)
     y_pred = predict(count_vectorizer, logreg, test_tokens_lowercase)
     print('accuracy %s' % accuracy_score(y_pred, test_tags))
+    print('F1 %s' % f1_score(y_pred, test_tags, average='macro'))
+
+    majority_class_pred = []
+    for _ in range(len(test_tags)):
+        majority_class_pred.append('I-PREMISE')
+    print('majority-class accuracy %s' % accuracy_score(majority_class_pred, test_tags))
+    print('majority-class F1 %s' % f1_score(majority_class_pred, test_tags, average='macro'))
+
+    random_class_pred = []
+    for _ in range(len(test_tags)):
+        choice = random.choice([0, 1])
+        if choice == 0:
+            random_class_pred.append('I-PREMISE')
+        else:
+            random_class_pred.append('O')
+    print('random-majority-class accuracy %s' % accuracy_score(random_class_pred, test_tags))
+    print('random-majority-class F1 %s' % f1_score(random_class_pred, test_tags, average='macro'))
 
     # Word-Embeddings
     sentences = get_sentences(train_tokens_lowercase)
