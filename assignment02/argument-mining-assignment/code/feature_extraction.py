@@ -11,6 +11,13 @@ from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import accuracy_score, f1_score
 import random
+from numpy import zeros
+
+from tensorflow import keras
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, TimeDistributed, Bidirectional, Embedding, Flatten
 
 
 CURRENT_WORKING_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname("__file__")))
@@ -126,3 +133,45 @@ if __name__ == '__main__':
     # find most_similar for 'should'
     result = model.most_similar(positive=['should'], topn=1)
     print(result)
+
+
+    # prepare tokenizer 
+    t = Tokenizer()
+    t.fit_on_texts(sentences)
+    vocab_size = len(t.word_index) + 1
+    # integer encode the documents
+    encoded_docs = t.texts_to_sequences(sentences)
+    # pad documents to a max length of 4 words
+    
+
+    # get the embedding matrix from the embedding layer 
+    embedding_matrix = zeros((vocab_size, 100))
+    for word, i in t.word_index.items():
+        embedding_vector = model[word]
+    if embedding_vector is not None:
+        embedding_matrix[i] = embedding_vector
+
+    max_length = max([len(arr) for arr in sentences])
+    X = pad_sequences(encoded_docs, maxlen=max_length, padding='post')
+    
+    # main model    
+    input = keras.Input(shape=(max_length,))
+    model = Embedding(vocab_size, 100, weights=[embedding_matrix], input_length=max_length)(input)    
+    model =  Bidirectional(LSTM (100, return_sequences=False, dropout=0.50), merge_mode='concat')(model)
+    # model = TimeDistributed(Dense(100,activation='relu'))(model)
+    model = Flatten()(model)
+
+    model = Dense(100,activation='relu')(model)
+    output = Dense(3,activation='softmax')(model)
+    model = keras.Model(input,output)
+    model.compile(loss='sparse_categorical_crossentropy',optimizer='adam', metrics=['accuracy'])
+    print(model.summary())
+
+    # TODO: train_tags has to be encoded -> is it necessary to pad the input?
+    # Consequently, we also have to add a padding to the train tags
+    # model.fit(X, train_tags, validation_split=0.25,epochs= 10, verbose = 2)
+
+    # evaluate the model
+    # bilstm_pred = model.predict(test_tokens_lowercase) # .evaluate(train_df, test_df, verbose=2)
+    # print('Bi-LSTM accuracy: %s' % accuracy_score(bilstm_pred, test_tags))
+    # print('Bi-LSTM  F1: %s' % f1_score(bilstm_pred, test_tags, average='macro'))
