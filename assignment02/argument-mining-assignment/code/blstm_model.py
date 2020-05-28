@@ -1,77 +1,91 @@
-import pandas as pd
 import os
 import numpy as np
+import pandas as pd
 from keras.callbacks import EarlyStopping
-from keras.preprocessing.text import one_hot, Tokenizer
-from sklearn.preprocessing import OneHotEncoder
-from keras.preprocessing.sequence import pad_sequences
-from keras.models import Sequential
-from keras.layers import LSTM, Dense, Flatten
+from keras.layers import Bidirectional, LSTM, Dense, SpatialDropout1D
 from keras.layers.embeddings import Embedding
+from keras.models import Sequential
+from keras.preprocessing.sequence import pad_sequences
+from keras.preprocessing.text import Tokenizer
 
 CURRENT_WORKING_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname("__file__")))
 TRAINING_DATA_PATH = f'{CURRENT_WORKING_DIR}/data/train_BIO.txt'
 TEST_DATA_PATH = f'{CURRENT_WORKING_DIR}/data/test_BIO.txt'
-
-
-def get_sentences(tokens):
-    '''
-
-    :param tokens: all the tokens in lowercase from a BIO file
-    :return: a list of paragraphs from from the file
-    '''
-    sentences_list = []
-    sentence = []
-    for token in tokens:
-        if token == '__end_paragraph__':
-            if len(sentence) > 0:
-                sentences_list.append(sentence)
-                sentence = []
-        elif token == '__end_essay__' or token == 'nan':
-            continue
-        else:
-            sentence.append(token)
-    return sentences_list
-
+GLOVE_FILE_PATH = f'{CURRENT_WORKING_DIR}/data/glove.6B.100d.txt'
 
 if __name__ == '__main__':
 
     # Parameters
-    MAX_WORDS_COUNT = 119083
-    Embedding_dim = 100
+    EMBEDDING_DIM = 100
 
     train_df = pd.read_csv(TRAINING_DATA_PATH, names=['token', 'tag'], sep='\t', skipinitialspace=True,
                            quotechar='"').dropna()
-    print(train_df.info)
+    test_df = pd.read_csv(TEST_DATA_PATH, names=['token', 'tag'], sep='\t', skipinitialspace=True,
+                          quotechar='"').dropna()
+
+    print("Training Data Info: ", train_df.info)
+    print("Testing data Info: ", test_df.info)
 
     train_tokens = train_df['token'].replace("\t", "", regex=True).replace("\n", "", regex=True)
-    train_tokens_lowercase = np.array([x.lower() if isinstance(x, str) else x for x in train_tokens]).astype('U')
+    test_tokens = test_df['token'].replace("\t", "", regex=True).replace("\n", "", regex=True)
 
     # output labels
-    labels = train_df['tag']
+    train_labels = train_df['tag']
+    test_labels = test_df['tag']
 
-    tokenizer = Tokenizer(num_words=MAX_WORDS_COUNT, lower=True)
-    tokenizer.fit_on_texts(train_tokens.values)
-    word_index = tokenizer.word_index
+    train_tokenizer = Tokenizer()
+    train_tokenizer.fit_on_texts(train_tokens.values)
+    word_index = train_tokenizer.word_index
     print('%s unique tokens.' % len(word_index))
 
     vocab_size = len(word_index) + 1
 
-    X_train = tokenizer.texts_to_sequences(train_tokens.values)
+    X_train = train_tokenizer.texts_to_sequences(train_tokens.values)
     X_train = pad_sequences(X_train, maxlen=4)
-    print("Shape of X:", X_train.shape)
+    print("Shape of X_train:", X_train.shape)
 
-    Y_train = pd.get_dummies(labels).values
-    print('Shape of labels:', Y_train.shape)
+    test_tokenizer = Tokenizer()
+    test_tokenizer.fit_on_texts(test_tokens.values)
 
-    print(X_train.shape[1])
+    X_test = test_tokenizer.texts_to_sequences(test_tokens.values)
+    X_test = pad_sequences(X_test, maxlen=4)
+    print("Shape of X_test:", X_test.shape)
+
+    Y_train = pd.get_dummies(train_labels).values
+    print('Shape of Y_train:', Y_train.shape)
+
+    Y_test = pd.get_dummies(test_labels).values
+    print('Shape of Y_test:', Y_test.shape)
+
+    # Use Pre-trained Glove embeddings
+    embeddings_index = {}
+    f = open(GLOVE_FILE_PATH)
+    for line in f:
+        values = line.split()
+        word = values[0]
+        coefficients = np.asarray(values[1:], dtype='float32')
+        embeddings_index[word] = coefficients
+    f.close()
+
+    embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
+    for word, i in word_index.items():
+        embedding_vector = embeddings_index.get(word)
+        if embedding_vector is not None:
+            # words that are not found in glove embeddings will be set to 0.
+            embedding_matrix[i] = embedding_vector
+
+    print('Found %s word vectors.' % len(embeddings_index))
 
     model = Sequential()
-    model.add(Embedding(MAX_WORDS_COUNT, Embedding_dim, input_length=X_train.shape[1]))
-    # model.add(SpatialDropout1D(0.2))
-    model.add(LSTM(100, dropout=0.2, recurrent_dropout=0.2))
+    model.add(Embedding(vocab_size, EMBEDDING_DIM, input_length=X_train.shape[1], weights=[embedding_matrix],
+                        trainable=False))
+    model.add(SpatialDropout1D(0.2))
+    model.add(Bidirectional(LSTM(100, dropout=0.2, recurrent_dropout=0.2)))
     model.add(Dense(Y_train.shape[1], activation='softmax'))
     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    # model.compile(loss='mean_squared_error', optimizer='adam')
+
+    print(model.summary())
 
     epochs = 5
     batch = 2000
@@ -79,46 +93,8 @@ if __name__ == '__main__':
     history = model.fit(X_train, Y_train, epochs=epochs, batch_size=batch, validation_split=0.1,
                         callbacks=[EarlyStopping(monitor='val_loss', patience=3, min_delta=0.0001)])
 
-    loss, accuracy = model.evaluate(X_train, Y_train, verbose=1)
+    loss, accuracy = model.evaluate(X_test, Y_test, verbose=0)
 
     print('Accuracy: %f' % (accuracy * 100))
 
-    # vocab_length = 15000
-
-    # encode train_tokens
-    # TODO, later used bow or TF_IDF encoding instead of simple encoding to see if it improves the results
-    # encode_train_tokens = [one_hot(d, vocab_length) for d in
-    #                        train_tokens_lowercase]  # remove blank encoded tokens . ? are not encoded
-
-    # pad_encoded_tokens = pad_sequences(encode_train_tokens, maxlen=4, padding='post')
-
-    # encode_train_labels = [one_hot(d, 30) if isinstance(d, str) else d for d in labels]
-
-    # pad_encoded_labels = pad_sequences(encode_train_labels, maxlen=7, padding='post')
-    # print(pad_encoded_labels)
-
-    # model = Sequential()
-    # model.add(Embedding(vocab_length, 8, input_length=4))
-    # model.add(Flatten())
-    # #model.add(LSTM(100))
-    # model.add(Dense(7, activation='sigmoid'))
-    #
-    # model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-    #
-    # print(model.summary())
-    #
-    # model.fit(pad_encoded_tokens, pad_encoded_labels, epochs=5, verbose=0)
-    #
-    # loss, accuracy = model.evaluate(pad_encoded_tokens, pad_encoded_labels, verbose=1)
-    #
-    # print('Accuracy: %f' % (accuracy * 100))
-
-    # # Word-Embeddings
-    # sentences = get_sentences(train_tokens_lowercase)
-    # model = Word2Vec(sentences, min_count=1, size=100, window=10)
-    # words = list(model.wv.vocab)
-    # # access vector for one word
-    # print(model['should'])
-    # # find most_similar for 'should'
-    # result = model.most_similar(positive=['should'], topn=1)
-    # print(result)
+    blstm_pred = model.predict(X_test)
