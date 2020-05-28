@@ -1,7 +1,8 @@
 import pandas as pd
 import os
 import numpy as np
-from keras.preprocessing.text import one_hot
+from keras.callbacks import EarlyStopping
+from keras.preprocessing.text import one_hot, Tokenizer
 from sklearn.preprocessing import OneHotEncoder
 from keras.preprocessing.sequence import pad_sequences
 from keras.models import Sequential
@@ -34,42 +35,83 @@ def get_sentences(tokens):
 
 
 if __name__ == '__main__':
+
+    # Parameters
+    MAX_WORDS_COUNT = 119083
+    Embedding_dim = 100
+
     train_df = pd.read_csv(TRAINING_DATA_PATH, names=['token', 'tag'], sep='\t', skipinitialspace=True,
                            quotechar='"').dropna()
+    print(train_df.info)
+
     train_tokens = train_df['token'].replace("\t", "", regex=True).replace("\n", "", regex=True)
     train_tokens_lowercase = np.array([x.lower() if isinstance(x, str) else x for x in train_tokens]).astype('U')
-    print(train_df.info)
+
+    # output labels
     labels = train_df['tag']
 
-    vocab_length = 15000
+    tokenizer = Tokenizer(num_words=MAX_WORDS_COUNT, lower=True)
+    tokenizer.fit_on_texts(train_tokens.values)
+    word_index = tokenizer.word_index
+    print('%s unique tokens.' % len(word_index))
+
+    vocab_size = len(word_index) + 1
+
+    X_train = tokenizer.texts_to_sequences(train_tokens.values)
+    X_train = pad_sequences(X_train, maxlen=4)
+    print("Shape of X:", X_train.shape)
+
+    Y_train = pd.get_dummies(labels).values
+    print('Shape of labels:', Y_train.shape)
+
+    print(X_train.shape[1])
+
+    model = Sequential()
+    model.add(Embedding(MAX_WORDS_COUNT, Embedding_dim, input_length=X_train.shape[1]))
+    # model.add(SpatialDropout1D(0.2))
+    model.add(LSTM(100, dropout=0.2, recurrent_dropout=0.2))
+    model.add(Dense(Y_train.shape[1], activation='softmax'))
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+    epochs = 5
+    batch = 2000
+
+    history = model.fit(X_train, Y_train, epochs=epochs, batch_size=batch, validation_split=0.1,
+                        callbacks=[EarlyStopping(monitor='val_loss', patience=3, min_delta=0.0001)])
+
+    loss, accuracy = model.evaluate(X_train, Y_train, verbose=1)
+
+    print('Accuracy: %f' % (accuracy * 100))
+
+    # vocab_length = 15000
 
     # encode train_tokens
     # TODO, later used bow or TF_IDF encoding instead of simple encoding to see if it improves the results
-    encode_train_tokens = [one_hot(d, vocab_length) for d in
-                           train_tokens_lowercase]  # remove blank encoded tokens . ? are not encoded
+    # encode_train_tokens = [one_hot(d, vocab_length) for d in
+    #                        train_tokens_lowercase]  # remove blank encoded tokens . ? are not encoded
 
-    pad_encoded_tokens = pad_sequences(encode_train_tokens, maxlen=4, padding='post')
+    # pad_encoded_tokens = pad_sequences(encode_train_tokens, maxlen=4, padding='post')
 
-    encode_train_labels = [one_hot(d, 30) if isinstance(d, str) else d for d in labels]
+    # encode_train_labels = [one_hot(d, 30) if isinstance(d, str) else d for d in labels]
 
-    pad_encoded_labels = pad_sequences(encode_train_labels, maxlen=7, padding='post')
-    print(pad_encoded_labels)
+    # pad_encoded_labels = pad_sequences(encode_train_labels, maxlen=7, padding='post')
+    # print(pad_encoded_labels)
 
-    model = Sequential()
-    model.add(Embedding(vocab_length, 8, input_length=4))
-    model.add(Flatten())
-    #model.add(LSTM(100))
-    model.add(Dense(7, activation='sigmoid'))
-
-    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-
-    print(model.summary())
-
-    model.fit(pad_encoded_tokens, pad_encoded_labels, epochs=5, verbose=0)
-
-    loss, accuracy = model.evaluate(pad_encoded_tokens, pad_encoded_labels, verbose=1)
-
-    print('Accuracy: %f' % (accuracy * 100))
+    # model = Sequential()
+    # model.add(Embedding(vocab_length, 8, input_length=4))
+    # model.add(Flatten())
+    # #model.add(LSTM(100))
+    # model.add(Dense(7, activation='sigmoid'))
+    #
+    # model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    #
+    # print(model.summary())
+    #
+    # model.fit(pad_encoded_tokens, pad_encoded_labels, epochs=5, verbose=0)
+    #
+    # loss, accuracy = model.evaluate(pad_encoded_tokens, pad_encoded_labels, verbose=1)
+    #
+    # print('Accuracy: %f' % (accuracy * 100))
 
     # # Word-Embeddings
     # sentences = get_sentences(train_tokens_lowercase)
