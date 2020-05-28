@@ -9,9 +9,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import accuracy_score, f1_score
-from sklearn.model_selection import KFold, cross_val_predict
+from sklearn.model_selection import KFold
 import random
-
 
 CURRENT_WORKING_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname("__file__")))
 TRAINING_DATA_PATH = f'{CURRENT_WORKING_DIR}/data/train_BIO.txt'
@@ -51,11 +50,10 @@ if __name__ == '__main__':
     # getting training and testing data
     train_X = train_df['token'].astype('U')
     test_X = test_df['token'].astype('U')
-    encoder = preprocessing.LabelEncoder()
-    train_y = encoder.fit_transform(train_df['tag'].astype('U'))
-    test_y = encoder.fit_transform(test_df['tag'].astype('U'))
+    train_y = train_df['tag'].astype('U')
+    test_y = test_df['tag'].astype('U')
     labels_map = {0: 'B-CLAIM', 1: 'B-MAJOR-CLAIM', 2: 'B-PREMISE', 3: 'I-CLAIM', 4: 'I-MAJOR-CLAIM', 5: 'I-PREMISE',
-                  6: 'O'}
+                  6: 'O', 7: 'O'}
 
     # Class Distribution. Mostly I-PREMISE and O are majority_classes
     print("\nTotal data-points in training data: " + str(len(train_X)))
@@ -80,7 +78,7 @@ if __name__ == '__main__':
     # Majority-class
     majority_class_pred = []
     for _ in range(len(test_y)):
-        majority_class_pred.append(5)
+        majority_class_pred.append('I-PREMISE')
     print('majority-class accuracy: %s' % accuracy_score(majority_class_pred, test_y))
     print('majority-class F1-macro: %s' % f1_score(majority_class_pred, test_y, average='macro'))
     print('majority-class F1-weighted: %s' % f1_score(majority_class_pred, test_y, average='weighted'))
@@ -90,9 +88,9 @@ if __name__ == '__main__':
     for _ in range(len(test_y)):
         choice = random.choice([0, 1])
         if choice == 0:
-            random_class_pred.append(5)
+            random_class_pred.append('I-PREMISE')
         else:
-            random_class_pred.append(6)
+            random_class_pred.append('O')
     print('random-majority-class accuracy: %s' % accuracy_score(random_class_pred, test_y))
     print('random-majority-class F1-macro: %s' % f1_score(random_class_pred, test_y, average='macro'))
     print('random-majority-class F1-weighted: %s' % f1_score(random_class_pred, test_y, average='weighted'))
@@ -145,6 +143,11 @@ if __name__ == '__main__':
     print('SVM accuracy: %s' % accuracy_score(sgd_pred, test_y))
     print('SVM F1-macro: %s' % f1_score(sgd_pred, test_y, average='macro'))
     print('SVM F1-weighted: %s' % f1_score(sgd_pred, test_y,  average='weighted'))
+    result_df = pd.DataFrame()
+    result_df['token'] = test_X
+    result_df['tag'] = sgd_pred
+    result_df.to_csv(f'{CURRENT_WORKING_DIR}/data/pred.txt', header=None, index=None, sep='\t', mode='w')
+    print()
 
     # Word-Embeddings
     # sentences = get_sentences(train_tokens_lowercase)
