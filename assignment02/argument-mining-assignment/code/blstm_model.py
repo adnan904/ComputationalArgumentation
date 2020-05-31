@@ -41,14 +41,14 @@ if __name__ == '__main__':
     vocab_size = len(word_index) + 1
 
     X_train = train_tokenizer.texts_to_sequences(train_tokens.values)
-    X_train = pad_sequences(X_train, maxlen=4)
+    X_train = pad_sequences(X_train, padding='post', maxlen=4)
     print("Shape of X_train:", X_train.shape)
 
     test_tokenizer = Tokenizer()
     test_tokenizer.fit_on_texts(test_tokens.values)
 
     X_test = test_tokenizer.texts_to_sequences(test_tokens.values)
-    X_test = pad_sequences(X_test, maxlen=4)
+    X_test = pad_sequences(X_test, padding='post', maxlen=4)
     print("Shape of X_test:", X_test.shape)
 
     Y_train = pd.get_dummies(train_labels).values
@@ -87,7 +87,7 @@ if __name__ == '__main__':
 
     print(model.summary())
 
-    epochs = 5
+    epochs = 2
     batch = 2000
 
     history = model.fit(X_train, Y_train, epochs=epochs, batch_size=batch, validation_split=0.1,
@@ -98,3 +98,17 @@ if __name__ == '__main__':
     print('Accuracy: %f' % (accuracy * 100))
 
     blstm_pred = model.predict(X_test)
+
+    blstm_highest_pred = [np.argmax(pred) for pred in blstm_pred]
+    blstm_highest_pred = list(map(lambda el: [el], blstm_highest_pred))
+
+    print(blstm_highest_pred)
+
+    # result_df = pd.DataFrame(list(zip(X_test, blstm_highest_pred)))
+    # reverse_word_map = dict(map(reversed, test_tokenizer.word_index.items()))
+    # words = [reverse_word_map.get(letter) for letter in X_test]
+    output = test_tokenizer.sequences_to_texts(blstm_highest_pred)
+    result_df = pd.DataFrame(list(zip(output, blstm_highest_pred)))
+    #     result_df['token'] = X_test
+    #     result_df['tag'] = blstm_highest_pred
+    result_df.to_csv('pred.txt', header=None, index=None, sep='\t', mode='w')
