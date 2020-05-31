@@ -1,7 +1,6 @@
 import json
 import os
 import csv
-import timeit
 from convert_to_bio import convert_to_bio  # make sure 'convert_to_bio.py' and the current file are in the same folder
 
 CURRENT_WORKING_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -38,7 +37,6 @@ def get_train_test_split_essays(corpus, split_scheme) -> (list, list):
 
 
 if __name__ == "__main__":
-    start = timeit.default_timer()
     json_corpus = json.load(open(CORPUS_PATH))
 
     # Read train_test_split and get essays from the unified corpus based on the split
@@ -58,5 +56,4 @@ if __name__ == "__main__":
         test_file.write(''.join(test_bio))
 
     print("\nSuccessfully created train and test Bio in '/data/'.")
-    stop = timeit.default_timer()
-    print('\nTime: ', stop - start, 'sec')
+

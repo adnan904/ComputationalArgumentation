@@ -3,7 +3,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 import os
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
-CURRENT_WORKING_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname("__file__")))
+CURRENT_WORKING_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 TRAINING_DATA_PATH = f'{CURRENT_WORKING_DIR}/data/train_BIO.txt'
 TEST_DATA_PATH = f'{CURRENT_WORKING_DIR}/data/test_BIO.txt'
 
