@@ -2,13 +2,13 @@ import json
 import pandas as pd
 import os
 import csv
-from sklearn.metrics import f1_score
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import SVC
 from sklearn.linear_model import SGDClassifier
 from sklearn.pipeline import Pipeline
+
 CURRENT_WORKING_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 CORPUS_PATH = f'{CURRENT_WORKING_DIR}/../data/unified_data.json'
 SPLIT_FILE_PATH = f'{CURRENT_WORKING_DIR}/../data/train-test-split.csv'
@@ -19,7 +19,7 @@ def get_train_test_split_essays(corpus, split_scheme) -> (list, list):
     :param corpus: unified data file with all the essays
     :param split_scheme: train_test_split scheme file
     :rtype: list, list
-    :return: lists of train, test split essay data
+    :return: pandas dataframe of train, test split essay id, text, bias
     """
 
     train_test_split_dict = {}
@@ -60,33 +60,53 @@ if __name__ == "__main__":
         test_X = [x[0] for x in test_essays['text']]
         test_y = list(test_essays['bias'])
 
-        # Naive Bayes
-        nb_pipeline = Pipeline([('vec', TfidfVectorizer(ngram_range=(2, 3))),
-                                ('clf', MultinomialNB())
-                                ])
-
-        nb_pipeline.fit(train_X, train_y)
-        pred = nb_pipeline.predict(test_X)
-        f1 = f1_score(y_true=test_y, y_pred=pred)
-        print('F1 for Naive Bayes: ' + str(f1))
+        # # Naive Bayes
+        # nb_pipeline = Pipeline([('vec', TfidfVectorizer(ngram_range=(2, 3))),
+        #                         ('clf', MultinomialNB())
+        #                         ])
+        #
+        # nb_pipeline.fit(train_X, train_y)
+        # pred = nb_pipeline.predict(test_X)
+        # f1 = f1_score(y_true=test_y, y_pred=pred)
+        # f1_macro = f1_score(y_true=test_y, y_pred=pred, average='macro')
+        # print('F1 for Naive-Bayes: ' + str(f1))
+        # print('F1-macro for Naive-Bayes: ' + str(f1_macro))
 
         # Kernel SVM
-        svm_pipeline = Pipeline([('vec', TfidfVectorizer()),
-                                ('clf',  SVC(kernel='poly', degree=2, max_iter=1000))
+        svm_pipeline = Pipeline([('vec', TfidfVectorizer(ngram_range=(1, 3))),
+                                ('clf',  SVC(kernel='rbf', C=100, gamma=1e-2, max_iter=1000))
                                  ])
 
         svm_pipeline.fit(train_X, train_y)
         pred = svm_pipeline.predict(test_X)
         f1 = f1_score(y_true=test_y, y_pred=pred)
+        f1_macro = f1_score(y_true=test_y, y_pred=pred, average='macro')
+        accuracy = accuracy_score(y_true=test_y, y_pred=pred)
+        precision = precision_score(y_true=test_y, y_pred=pred)
+        recall = recall_score(y_true=test_y, y_pred=pred)
         print('F1 for poly-SVM: ' + str(f1))
+        print('F1-macro for poly-SVM: ' + str(f1_macro))
+        print('Accuracy for poly-SVM: ' + str(accuracy))
+        print('Precision for poly-SVM: ' + str(precision))
+        print('Recall for poly-SVM: ' + str(recall))
+        print("=============================================================")
 
         # Linear SVM
-        lin_svm_pipeline = Pipeline([('vec', TfidfVectorizer(ngram_range=(2, 3))),
-                                     ('clf', SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, max_iter=1000,
-                                                           tol=None, n_jobs=-1))
+        lin_svm_pipeline = Pipeline([('vec', TfidfVectorizer(ngram_range=(2, 3), lowercase=False)),
+                                     ('clf', SGDClassifier(loss='hinge', penalty='l2', alpha=1e-5, max_iter=1000,
+                                                           tol=None, class_weight='balanced', n_jobs=-1,
+                                                           random_state=42))
                                      ])
 
         lin_svm_pipeline.fit(train_X, train_y)
         pred = lin_svm_pipeline.predict(test_X)
         f1 = f1_score(y_true=test_y, y_pred=pred)
+        f1_macro = f1_score(y_true=test_y, y_pred=pred, average='macro')
+        accuracy = accuracy_score(y_true=test_y, y_pred=pred)
+        precision = precision_score(y_true=test_y, y_pred=pred)
+        recall = recall_score(y_true=test_y, y_pred=pred)
         print('F1 for lin-SVM: ' + str(f1))
+        print('F1-macro for lin-SVM: ' + str(f1_macro))
+        print('Accuracy for lin-SVM: ' + str(accuracy))
+        print('Precision for lin-SVM: ' + str(precision))
+        print('Recall for lin-SVM: ' + str(recall))
