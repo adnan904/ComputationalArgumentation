@@ -84,16 +84,16 @@ if __name__ == "__main__":
         accuracy = accuracy_score(y_true=test_y, y_pred=pred)
         precision = precision_score(y_true=test_y, y_pred=pred)
         recall = recall_score(y_true=test_y, y_pred=pred)
-        print('F1 for poly-SVM: ' + str(f1))
-        print('F1-macro for poly-SVM: ' + str(f1_macro))
-        print('Accuracy for poly-SVM: ' + str(accuracy))
-        print('Precision for poly-SVM: ' + str(precision))
-        print('Recall for poly-SVM: ' + str(recall))
+        print('F1 for rbf-SVM: ' + str(f1))
+        print('F1-macro for rbf-SVM: ' + str(f1_macro))
+        print('Accuracy for rbf-SVM: ' + str(accuracy))
+        print('Precision for rbf-SVM: ' + str(precision))
+        print('Recall for rbf-SVM: ' + str(recall))
         print("=============================================================")
 
         # Linear SVM
         lin_svm_pipeline = Pipeline([('vec', TfidfVectorizer(ngram_range=(2, 3), lowercase=False)),
-                                     ('clf', SGDClassifier(loss='hinge', penalty='l2', alpha=1e-5, max_iter=1000,
+                                     ('clf', SGDClassifier(loss='hinge', penalty='l2', alpha=1e-5, max_iter=2000,
                                                            tol=None, class_weight='balanced', n_jobs=-1,
                                                            random_state=42))
                                      ])
