@@ -10,7 +10,7 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.pipeline import Pipeline
 
 CURRENT_WORKING_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-CORPUS_PATH = f'{CURRENT_WORKING_DIR}/../data/unified_data.json'
+CORPUS_PATH = f'{CURRENT_WORKING_DIR}/../data/essay_corpus.json'
 SPLIT_FILE_PATH = f'{CURRENT_WORKING_DIR}/../data/train-test-split.csv'
 
 
@@ -35,11 +35,17 @@ def get_train_test_split_essays(corpus, split_scheme) -> (list, list):
     # extract essays that match the test_train_split scheme
     for essay in corpus:
         if train_test_split_dict[int(essay['id'])] == 'TRAIN':
-            text = essay['text'].split('\n\n')
+            text = essay['text'].replace('\n \n', '\n\n').split('\n\n')
+            if len(text) == 1:
+                text = essay['text'].split('\n  \n')
+            text = text[1:]
+            if len(text) > 1:
+                text = [text[0]]
             train_df = train_df.append({'id': essay['id'], 'text': text, 'bias': essay['confirmation_bias']},
                                        ignore_index=True)
         else:
-            text = essay['text'].split('\n\n')
+            text = essay['text'].replace('\n \n', '\n\n').split('\n\n')
+            text = text[1:]
             test_df = test_df.append({'id': essay['id'], 'text': text, 'bias': essay['confirmation_bias']},
                                      ignore_index=True)
     train_df.sort_values('id', inplace=True)
@@ -74,7 +80,7 @@ if __name__ == "__main__":
 
         # Kernel SVM
         svm_pipeline = Pipeline([('vec', TfidfVectorizer(ngram_range=(1, 3))),
-                                ('clf',  SVC(kernel='rbf', C=100, gamma=1e-2, max_iter=1000))
+                                ('clf',  SVC(kernel='rbf', C=100, gamma=1e-2,  max_iter=1000))
                                  ])
 
         svm_pipeline.fit(train_X, train_y)
@@ -92,7 +98,7 @@ if __name__ == "__main__":
         print("=============================================================")
 
         # Linear SVM
-        lin_svm_pipeline = Pipeline([('vec', TfidfVectorizer(ngram_range=(2, 3), lowercase=False)),
+        lin_svm_pipeline = Pipeline([('vec', TfidfVectorizer(ngram_range=(1, 3), lowercase=False)),
                                      ('clf', SGDClassifier(loss='hinge', penalty='l2', alpha=1e-5, max_iter=2000,
                                                            tol=None, class_weight='balanced', n_jobs=-1,
                                                            random_state=42))
