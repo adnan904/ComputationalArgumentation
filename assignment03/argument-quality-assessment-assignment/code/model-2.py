@@ -41,12 +41,12 @@ def get_train_test_split_essays(corpus, split_scheme) -> (list, list):
             text = text[1:]
             if len(text) > 1:
                 text = [text[0]]
-            train_df = train_df.append({'id': essay['id'], 'text': text, 'bias': essay['confirmation_bias']},
+            train_df = train_df.append({'id': essay['id'], 'text': ''.join(text), 'bias': essay['confirmation_bias']},
                                        ignore_index=True)
         else:
             text = essay['text'].replace('\n \n', '\n\n').split('\n\n')
             text = text[1:]
-            test_df = test_df.append({'id': essay['id'], 'text': text, 'bias': essay['confirmation_bias']},
+            test_df = test_df.append({'id': essay['id'], 'text': ''.join(text), 'bias': essay['confirmation_bias']},
                                      ignore_index=True)
     train_df.sort_values('id', inplace=True)
     test_df.sort_values('id', inplace=True)
@@ -61,9 +61,9 @@ if __name__ == "__main__":
         train_test_split_file = csv.reader(csvfile, delimiter=';')
         next(train_test_split_file, None)
         train_essays, test_essays = get_train_test_split_essays(json_corpus, train_test_split_file)
-        train_X = [x[0] for x in train_essays['text']]
+        train_X = list(train_essays['text'])
         train_y = list(train_essays['bias'])
-        test_X = [x[0] for x in test_essays['text']]
+        test_X = list(test_essays['text'])
         test_y = list(test_essays['bias'])
 
         # # Naive Bayes
