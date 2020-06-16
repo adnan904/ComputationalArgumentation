@@ -52,6 +52,7 @@ def get_train_test_split_essays(corpus, split_scheme) -> (list, list):
             text = text[1:]
             test_df = test_df.append({'id': essay['id'], 'text': ''.join(text), 'bias': essay['confirmation_bias']},
                                      ignore_index=True)
+
     train_df.sort_values('id', inplace=True)
     test_df.sort_values('id', inplace=True)
     return train_df, test_df
@@ -72,7 +73,12 @@ def contains_adv_trans_phrase(essay_text, adv_trans_phrases, lower=False):
 class AdversativeTransitionFeatures(BaseEstimator):
     '''
     Class to add adversative transition features for confirmation bias classification.
+    - 47 adversative transition phrases: https://msu.edu/user/jdowell/135/transw.html#anchor1782036
+    - 5 different categories
+    - distinguished between lower/upper case
+    - distinguished between presence in surrounding paragraphs (introduction or conclusion) or in a body paragraph.    
     '''
+
     def __init__(self):
         pass
 
@@ -84,19 +90,22 @@ class AdversativeTransitionFeatures(BaseEstimator):
         return self
 
     def transform(self, x_dataset):
+
+        # create 2 dimensional lists, each inner array stands for one adversative transition phrase category
+
+        # --- introduction + conclusion --- 
         # features for all categories of adversative transition phrases in lower case
-        X_category_concession_lc = []
-        X_category_conflict_lc = []
-        X_category_dismissal_lc = []
-        X_category_emphasis_lc = []
-        X_category_replacement_lc = []
+        ic_lc = [[],[],[],[],[]]
 
         # features for all categories of adversative transition phrases in upper case
-        X_category_concession_uc = []
-        X_category_conflict_uc = []
-        X_category_dismissal_uc = []
-        X_category_emphasis_uc = []
-        X_category_replacement_uc = []
+        ic_uc = [[],[],[],[],[]]
+
+        # --- body ---
+        # features for all categories of adversative transition phrases in lower case
+        b_lc = [[],[],[],[],[]]
+
+        # features for all categories of adversative transition phrases in upper case
+        b_uc = [[],[],[],[],[]]
 
         # lists of adversative transition phrases
         concession_phrases = ['But even so', 'Nevertheless', 'Even though', 'On the other hand', 
@@ -109,23 +118,42 @@ class AdversativeTransitionFeatures(BaseEstimator):
         emphasis_phrases = ['Even more',  'Above all', 'Indeed', 'More importantly', 'Besides']
         replacement_phrases = ['At least', 'Rather', 'Instead' ]
 
+        all_phrasetypes = [concession_phrases, conflict_phrases, dismissal_phrases, emphasis_phrases, replacement_phrases]
+
         for essay_text in x_dataset:
-            # create binary features for the lower case
-            X_category_concession_lc.append(contains_adv_trans_phrase(essay_text, concession_phrases, lower=True))
-            X_category_conflict_lc.append(contains_adv_trans_phrase(essay_text, conflict_phrases, lower=True))
-            X_category_dismissal_lc.append(contains_adv_trans_phrase(essay_text, dismissal_phrases, lower=True))
-            X_category_emphasis_lc.append(contains_adv_trans_phrase(essay_text, emphasis_phrases, lower=True))
-            X_category_replacement_lc.append(contains_adv_trans_phrase(essay_text, replacement_phrases, lower=True))
+            # We identify paragraphs by checking for line breaks and consider 
+            # the first paragraph as introduction, 
+            # the last as conclusion 
+            # and all remaining ones as body paragraphs.
+            paragraphs = essay_text.split('\n')
+            introduction_and_conclusion = paragraphs[0] + paragraphs[len(paragraphs)-1]
+            body = ''
+            for i in range(1, len(paragraphs)-2):
+                body += paragraphs[i]
 
-            # create binary features for the upper case
-            X_category_concession_uc.append(contains_adv_trans_phrase(essay_text, concession_phrases))
-            X_category_conflict_uc.append(contains_adv_trans_phrase(essay_text, conflict_phrases))
-            X_category_dismissal_uc.append(contains_adv_trans_phrase(essay_text, dismissal_phrases))
-            X_category_emphasis_uc.append(contains_adv_trans_phrase(essay_text, emphasis_phrases))
-            X_category_replacement_uc.append(contains_adv_trans_phrase(essay_text, replacement_phrases))
+            for i in range(len(all_phrasetypes)):
+                # introduction an conclusion features (ic)
+                # lower case
+                ic_lc[i].append(contains_adv_trans_phrase(introduction_and_conclusion, all_phrasetypes[i], lower=True))
+                # upper case
+                ic_uc[i].append(contains_adv_trans_phrase(introduction_and_conclusion, all_phrasetypes[i]))
 
-        X = np.array([X_category_concession_lc, X_category_conflict_lc, X_category_dismissal_lc, X_category_emphasis_lc, X_category_replacement_lc,
-                                    X_category_concession_uc, X_category_conflict_uc, X_category_dismissal_uc, X_category_emphasis_uc, X_category_replacement_uc]).T
+                # body features (b)
+                # lower case
+                b_lc[i].append(contains_adv_trans_phrase(body, all_phrasetypes[i], lower=True))
+
+                # upper case
+                b_uc[i].append(contains_adv_trans_phrase(body, all_phrasetypes[i]))
+                
+        
+        features = []
+        for i in range(len(all_phrasetypes)):
+            features.append(ic_lc[i])
+            features.append(ic_uc[i])
+            features.append(b_lc[i])
+            features.append(b_uc[i])
+
+        X = np.array(features).T
 
         # print(X)
         # print(X.shape)
@@ -188,6 +216,7 @@ if __name__ == "__main__":
         test_X = list(test_essays['text'])
         test_y = list(test_essays['bias'])
 
+       
         # # Naive Bayes
         # nb_pipeline = Pipeline([('vec', TfidfVectorizer(ngram_range=(2, 3))),
         #                         ('clf', MultinomialNB())
@@ -202,8 +231,7 @@ if __name__ == "__main__":
 
         # Kernel SVM
         kernel_features = []
-        kernel_adv_trans_features = AdversativeTransitionFeatures() # this class includes my custom features
-        kernel_features.append(('adv_trans_features', kernel_adv_trans_features))
+        kernel_features.append(('adv_trans_features', AdversativeTransitionFeatures()))
 
         countVecWord = TfidfVectorizer(ngram_range=(1, 3))
         kernel_features.append(('vec', countVecWord))
@@ -230,12 +258,12 @@ if __name__ == "__main__":
         print('Recall for rbf-SVM: ' + str(recall))
         print("=============================================================")
 
-        print('Train data:')
-        adv_trans_text_analysis(train_essays)
-        print()
-        print('Test data:')
-        adv_trans_text_analysis(test_essays)
-        print()
+        # print('Train data:')
+        # adv_trans_text_analysis(train_essays)
+        # print()
+        # print('Test data:')
+        # adv_trans_text_analysis(test_essays)
+        # print()
 
         # load custom featues and FeatureUnion with Vectorizer
         lin_features = []
