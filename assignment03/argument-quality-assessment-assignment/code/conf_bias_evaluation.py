@@ -36,8 +36,9 @@ def main():
     prediction_labels = [1 if e["confirmation_bias"] else 0 for e in predictions]
 
     # Extract true labels
-    # They should already be sorted as the list of test_ids is
+    # Also, make sure they are sorted based on their id
     y_true = list(filter(lambda x: x["id"] in test_ids, data))
+    y_true = sorted(y_true, key=lambda x: x["id"])
     y_true_labels = [1 if e["confirmation_bias"] else 0 for e in y_true]
 
     # Print the final F1 score to console
