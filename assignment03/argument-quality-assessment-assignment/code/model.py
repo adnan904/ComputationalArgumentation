@@ -95,30 +95,25 @@ class AdversativeTransitionFeatures(BaseEstimator):
 
         # --- introduction + conclusion --- 
         # features for all categories of adversative transition phrases in lower case
-        ic_lc = [[],[],[],[],[]]
+        ic_lc = [[],[]]
 
         # features for all categories of adversative transition phrases in upper case
-        ic_uc = [[],[],[],[],[]]
+        ic_uc = [[],[]]
 
         # --- body ---
         # features for all categories of adversative transition phrases in lower case
-        b_lc = [[],[],[],[],[]]
+        b_lc = [[],[]]
 
         # features for all categories of adversative transition phrases in upper case
-        b_uc = [[],[],[],[],[]]
+        b_uc = [[],[]]
 
         # lists of adversative transition phrases
-        concession_phrases = ['But even so', 'Nevertheless', 'Even though', 'On the other hand', 
-                        'Admittedly', 'However','Nonetheless','Despite','Notwithstanding', 'Albeit','Still','Altough','In spite of',
-                        'Regardless',  'Yet','Though', 'Granted' ,'Be that as it may']
-        conflict_phrases = ['But', 'By way of contrast', 'While', 'On the other hand','However','Yet','Whereas','Though.',
-                        'In contrast','When in fact','Conversely','Still' ]
-        dismissal_phrases = ['Either way', 'Whichever happens', 'In either event', 'In any case', 'At any rate', 
-                        'In either case', 'Whatever happens', 'All the same', 'In any event']
-        emphasis_phrases = ['Even more',  'Above all', 'Indeed', 'More importantly', 'Besides']
-        replacement_phrases = ['At least', 'Rather', 'Instead' ]
+        concession_phrases = ['Nevertheless', 'Even though', 'On the other hand', 'Admittedly', 'Yet', 'despite this','albeit']
+        conflict_phrases = ['By way of contrast', 'On the other hand', 'Yet', 'In contrast', 'Still']
+        #dismissal_phrases = ['All the same']
+        #replacement_phrases = ['Rather', 'Instead']
 
-        all_phrasetypes = [concession_phrases, conflict_phrases, dismissal_phrases, emphasis_phrases, replacement_phrases]
+        all_phrasetypes = [concession_phrases, conflict_phrases]
 
         for essay_text in x_dataset:
             # We identify paragraphs by checking for line breaks and consider 
@@ -166,17 +161,13 @@ class AdversativeTransitionFeatures(BaseEstimator):
 
 
 def adv_trans_text_analysis(test_essays):
-    concession_phrases = ['But even so', 'Nevertheless', 'Even though', 'On the other hand', 
-                        'Admittedly', 'However','Nonetheless','Despite this','Notwithstanding', 'Albeit','Still','Altough','In spite of',
-                        'Regardless',  'Yet','Though', 'Granted' ,'Be that as it may']
-    conflict_phrases = ['But', 'By way of contrast', 'While', 'On the other hand','However','Yet','Whereas','Though.',
-                    'In contrast','When in fact','Conversely','Still' ]
-    dismissal_phrases = ['Either way', 'Whichever happens', 'In either event', 'In any case', 'At any rate', 
-                    'In either case', 'Whatever happens', 'All the same', 'In any event']
-    emphasis_phrases = ['Even more',  'Above all', 'Indeed', 'More importantly', 'Besides']
-    replacement_phrases = ['At least', 'Rather', 'Instead' ]
+    concession_phrases = ['Nevertheless', 'Even though', 'On the other hand', 'Admittedly', 'Yet', 'despite this','albeit']
+    conflict_phrases = ['By way of contrast', 'On the other hand', 'Yet', 'In contrast', 'Still']
+    #dismissal_phrases = ['All the same']
+    #emphasis_phrases = []
+    #replacement_phrases = ['Rather', 'Instead']
 
-    all_phrases = [concession_phrases, conflict_phrases, dismissal_phrases, emphasis_phrases, replacement_phrases]
+    all_phrases = [concession_phrases, conflict_phrases]
     true_dict = {}
     false_dict = {}
     count_true = 0
@@ -198,10 +189,14 @@ def adv_trans_text_analysis(test_essays):
     print('Bias true: ' + str(count_true))
     print('Bias false: ' + str(count_false))
 
-    print('Bias = true: ' + str(true_dict))
-    print('Bias = false: ' + str(false_dict))
+    print('Bias = true: ' + str(sorted(true_dict.items())))
+    print('Bias = false: ' + str(sorted(false_dict.items())))
 
-
+    for trueItem in sorted(true_dict.items()):
+        # bias=true means there are counter args
+        if trueItem[0] in false_dict:
+            if trueItem[1] > false_dict[trueItem[0]]:
+                print(str(trueItem)+" > ('"+str(trueItem[0])+", "+str(false_dict[trueItem[0]])+")")
 
 if __name__ == "__main__":
     json_corpus = json.load(open(CORPUS_PATH, encoding='utf-8'))
@@ -258,12 +253,12 @@ if __name__ == "__main__":
         print('Recall for rbf-SVM: ' + str(recall))
         print("=============================================================")
 
-        # print('Train data:')
-        # adv_trans_text_analysis(train_essays)
-        # print()
-        # print('Test data:')
-        # adv_trans_text_analysis(test_essays)
-        # print()
+        print('Train data:')
+        adv_trans_text_analysis(train_essays)
+        print()
+        print('Test data:')
+        adv_trans_text_analysis(test_essays)
+        print()
 
         # load custom featues and FeatureUnion with Vectorizer
         lin_features = []
