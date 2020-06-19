@@ -1,3 +1,5 @@
+# CA20 Assignment 3 evaluation script; version 2020-06-19
+
 import argparse
 import json
 import pandas as pd
@@ -25,14 +27,14 @@ def main():
     test_ids = sorted([int(fn[-3:]) for fn in splits[splits.SET == "TEST"].ID.values])
 
     #  Read data files from disk
-    with open(ESSAYS_PATH, "r") as f:
+    with open(ESSAYS_PATH, "r", encoding='utf-8') as f:
         data = json.load(f)
-    with open(PREDICTIONS_PATH, "r") as f:
+    with open(PREDICTIONS_PATH, "r", encoding='utf-8') as f:
         predictions = json.load(f)
 
     # Extract prediction labels
-    # Also, make sure they are sorted based on their id
-    predictions = sorted(predictions, key=lambda x: x["id"])
+    # Also, make sure they are sorted based on the integer value of their id
+    predictions = sorted(predictions, key=lambda x: int(x["id"]))
     prediction_labels = [1 if e["confirmation_bias"] else 0 for e in predictions]
 
     # Extract true labels

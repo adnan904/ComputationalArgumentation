@@ -16,7 +16,7 @@ from sklearn.base import BaseEstimator
 CURRENT_WORKING_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 CORPUS_PATH = f'{CURRENT_WORKING_DIR}/../data/essay_corpus.json'
 SPLIT_FILE_PATH = f'{CURRENT_WORKING_DIR}/../data/train-test-split.csv'
-
+PRED_FILE_PATH= f'{CURRENT_WORKING_DIR}/../data/predictions.json'
 
 def get_train_test_split_essays(corpus, split_scheme) -> (list, list):
     """
@@ -198,6 +198,26 @@ def adv_trans_text_analysis(test_essays):
             if trueItem[1] > false_dict[trueItem[0]]:
                 print(str(trueItem)+" > ('"+str(trueItem[0])+", "+str(false_dict[trueItem[0]])+")")
 
+
+class Prediction(object):
+    id = ""
+    confirmation_bias = False
+    def __init__(self, essay_id, confirmation_bias):
+        self.id = str(essay_id)
+        self.confirmation_bias = bool(confirmation_bias)
+
+def create_prediction_file(test_essay_ids, pred):
+    predictions = []
+    
+    for id, bias in zip(test_essay_ids, pred):
+        predictions.append(Prediction(id, bias))
+
+    json_dump = json.dumps([obj.__dict__ for obj in predictions], indent=4, ensure_ascii=False)
+    with open(PRED_FILE_PATH, "w", encoding='utf-8') as outfile:
+        outfile.write(json_dump)
+    
+    print("Successfully created prediction file in '" + PRED_FILE_PATH + "'.")
+
 if __name__ == "__main__":
     json_corpus = json.load(open(CORPUS_PATH, encoding='utf-8'))
 
@@ -253,12 +273,12 @@ if __name__ == "__main__":
         print('Recall for rbf-SVM: ' + str(recall))
         print("=============================================================")
 
-        print('Train data:')
-        adv_trans_text_analysis(train_essays)
-        print()
-        print('Test data:')
-        adv_trans_text_analysis(test_essays)
-        print()
+        # print('Train data:')
+        # adv_trans_text_analysis(train_essays)
+        # print()
+        # print('Test data:')
+        # adv_trans_text_analysis(test_essays)
+        # print()
 
         # load custom featues and FeatureUnion with Vectorizer
         lin_features = []
@@ -289,3 +309,6 @@ if __name__ == "__main__":
         print('Accuracy for lin-SVM: ' + str(accuracy))
         print('Precision for lin-SVM: ' + str(precision))
         print('Recall for lin-SVM: ' + str(recall))
+
+        print("=============================================================")
+        create_prediction_file(test_essays['id'], pred)
