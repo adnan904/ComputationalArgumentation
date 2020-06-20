@@ -1,7 +1,7 @@
 [
     {
         "id": "4",
-        "confirmation_bias": true
+        "confirmation_bias": false
     },
     {
         "id": "5",
@@ -41,7 +41,7 @@
     },
     {
         "id": "77",
-        "confirmation_bias": false
+        "confirmation_bias": true
     },
     {
         "id": "82",
@@ -61,7 +61,7 @@
     },
     {
         "id": "98",
-        "confirmation_bias": false
+        "confirmation_bias": true
     },
     {
         "id": "103",
@@ -109,7 +109,7 @@
     },
     {
         "id": "154",
-        "confirmation_bias": true
+        "confirmation_bias": false
     },
     {
         "id": "160",
@@ -209,7 +209,7 @@
     },
     {
         "id": "252",
-        "confirmation_bias": false
+        "confirmation_bias": true
     },
     {
         "id": "255",
@@ -225,7 +225,7 @@
     },
     {
         "id": "266",
-        "confirmation_bias": false
+        "confirmation_bias": true
     },
     {
         "id": "277",
@@ -289,7 +289,7 @@
     },
     {
         "id": "355",
-        "confirmation_bias": false
+        "confirmation_bias": true
     },
     {
         "id": "359",
@@ -297,19 +297,19 @@
     },
     {
         "id": "364",
-        "confirmation_bias": false
+        "confirmation_bias": true
     },
     {
         "id": "373",
-        "confirmation_bias": false
+        "confirmation_bias": true
     },
     {
         "id": "382",
-        "confirmation_bias": false
+        "confirmation_bias": true
     },
     {
         "id": "386",
-        "confirmation_bias": true
+        "confirmation_bias": false
     },
     {
         "id": "393",

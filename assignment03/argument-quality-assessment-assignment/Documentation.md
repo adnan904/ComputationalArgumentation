@@ -35,28 +35,38 @@
 ### How to run the scripts
 
 - On a venv install the requirements specified in `requirements.txt`
-- Make sure you have the same directory structure as above otherwise adjust the paths in the scripts accordingly.
+- Make sure you have the same directory structure as above otherwise adjust the paths in the `model.py` script accordingly.
 - Run `model.py` to generate the predictions in `data/` directory with name `predictions.json`
-- Run `conf_bias_evaluation` script with the filepath to the `predictions.json` as predictions
+- Run `conf_bias_evaluation` script with the filepath to the `data\`.
 
-## Model Explanation
+## Model Selection
 
-Inspired by `Stab16` we choose a support vector machine (SVM) as a learner.
-Therefore we used a linear SGDClassifier (`sklearn.linear_model.SKDClassifier`) with two different features (Adversative Transitions and Unigrams) to classify the confirmation bias. These features are described in more detail below.
-With this approach of `SVM uni+adv` we achieve a `F1-Score: 0.6875`, evaluated by the `conf_bias_evaluation.py` file.
+We selected SVM as the model for mainly these 3 reasons:
 
-#### Feature Selection
+- In the paper `Recognizing the Absence of Opposing Arguments in Persuasive Essays` by `Stab and Gurevych` they used SVM for doing the identical task and the scores were pretty high.
+- We read the paper titled: `Text categorization with Support Vector Machines: Learning with many relevant features`[1]. In the paper the author explores why SVM are suited for text-classification tasks.
+- Even then we tried multiple other models: Logistic Regression, Naive Bayes, Random Forrest and the performance of SVM was the best.
+- We used Linear SVM because text classification is mostly a linearly seperable problem[1] and using kernels(rbf, poly) to map the data to a higher dimensional space did not really improve the performance in this case.
 
-In the approach of `Stab16`, the SVM works best in combination with the features `Unigrams (uni)`, `Adversative transitions (adv)`, and `Production rules (pr)`, whereby the `adv` features seem to yield the best results of all these features.
-At first, we just worked with the `uni` feature.
-Therefore we used `TfidfVectorizer` (sklearn.feature_extraction.text.TfidfVectorizer) to create Unigrams and achieved a F1-score of already 0.645.
-Afterward, we tried to increase this score with `adv`.
-Therefore, like in the approach of `Stab16`, we added 20 different features: 
-We also used 47 adversative transitional phrases that are grouped in the following categories:
-concession (18), conflict (12), dismissal (9), emphasis (5) and replacement (3).
-For each of these categories, we added features for the upper and the lower case as well as for their presence in the surrounding paragraph (introduction+conclusion or in the body).
-But the results were even worse than just the approach with only `uni`.
-These results from the opposite labels in `Stab16`, so if we have a `confirmation_bias=true` in the paper, our data has a `confirmation_bias=false`.
-So we did a deeper analysis of the different adversative transition categories to just use the ones that appear more often in essays with `confirmation_bias=true`.
-As a result, we detected that the concession and conflict phrases are the best indicator for the `confirmation_bias` in our data.
-Consequently, we just use the phrases of these categories, such that we came up with 12 different phrases.
+- We used GridSearch for hyperparameter tuning.
+
+[1] : https://link.springer.com/chapter/10.1007/BFb0026683
+
+## Feature Selection
+
+For features we used the following:
+
+- `n-grams` + `TF-IDF` : In the range of 1-3 so that unique keywords and phrases are identified and given more importance.
+  We used `TfidfVectorizer` of scikit-learn library to create n-grams.
+- `Adversative transitional` phrases (adv): to identify conflict, contradiction, concession,and dismissal in the text which indicate presence of opposing argument. We first used all 47 adversative transitional phrases that are grouped in the following categories:
+
+  - concession (18)
+  - conflict (12)
+  - dismissal (9)
+  - emphasis (5)
+  - replacement (3)
+
+  For each of these categories, we added features for the upper and the lower case as well as for their presence in the surrounding paragraph (introduction+conclusion or in the body)but the results were even worse than just the approach with only `n-grams + TF-IDF`. So we did a deeper analysis of training data by finding the occurances of phrases in both the `true` and `false` classes (using `adv_trans_text_analysis` function in the code). As a result, we detected that the concession and conflict phrases are the best indicator for the `opposing arguments` in our training data.
+  Consequently, we just used 15 phrases of these categories to get an F1 score of `.754`.
+
+- We used 10-fold cross-validation on the training data for regularization.
