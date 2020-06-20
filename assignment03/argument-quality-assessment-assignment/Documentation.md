@@ -1,4 +1,4 @@
-# CA – Assignment 2: Argument Mining
+# CA – Assignment 3: Argument Quality Assessment
 
 - Group: `FakeNews`
 - Group members:
@@ -12,7 +12,7 @@
 
 ```
 .
-└── argument-mining-assignment
+└── argument-quality-assessment-assignment
     ├── Documentation.pdf
     ├── README
     ├── requirements.txt
