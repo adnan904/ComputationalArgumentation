@@ -161,7 +161,7 @@ class AdversativeTransitionFeatures(BaseEstimator):
 
 
 def adv_trans_text_analysis(test_essays):
-    concession_phrases = ['Nevertheless', 'Even though', 'On the other hand', 'Admittedly', 'Yet', 'despite this','albeit']
+    concession_phrases = ['Nevertheless', 'Even though', 'On the other hand', 'Admittedly', 'Yet', 'Despite this','Albeit']
     conflict_phrases = ['By way of contrast', 'On the other hand', 'Yet', 'In contrast', 'Still']
     #dismissal_phrases = ['All the same']
     #emphasis_phrases = []
