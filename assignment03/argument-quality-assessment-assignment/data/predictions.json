@@ -29,7 +29,7 @@
     },
     {
         "id": "68",
-        "confirmation_bias": true
+        "confirmation_bias": false
     },
     {
         "id": "71",
@@ -61,7 +61,7 @@
     },
     {
         "id": "98",
-        "confirmation_bias": true
+        "confirmation_bias": false
     },
     {
         "id": "103",
@@ -93,7 +93,7 @@
     },
     {
         "id": "136",
-        "confirmation_bias": true
+        "confirmation_bias": false
     },
     {
         "id": "139",
@@ -129,7 +129,7 @@
     },
     {
         "id": "180",
-        "confirmation_bias": true
+        "confirmation_bias": false
     },
     {
         "id": "182",
@@ -161,7 +161,7 @@
     },
     {
         "id": "211",
-        "confirmation_bias": true
+        "confirmation_bias": false
     },
     {
         "id": "212",
@@ -209,7 +209,7 @@
     },
     {
         "id": "252",
-        "confirmation_bias": true
+        "confirmation_bias": false
     },
     {
         "id": "255",
@@ -249,7 +249,7 @@
     },
     {
         "id": "306",
-        "confirmation_bias": true
+        "confirmation_bias": false
     },
     {
         "id": "310",
@@ -281,7 +281,7 @@
     },
     {
         "id": "348",
-        "confirmation_bias": true
+        "confirmation_bias": false
     },
     {
         "id": "352",
@@ -297,7 +297,7 @@
     },
     {
         "id": "364",
-        "confirmation_bias": true
+        "confirmation_bias": false
     },
     {
         "id": "373",
@@ -305,7 +305,7 @@
     },
     {
         "id": "382",
-        "confirmation_bias": true
+        "confirmation_bias": false
     },
     {
         "id": "386",
@@ -317,6 +317,6 @@
     },
     {
         "id": "398",
-        "confirmation_bias": true
+        "confirmation_bias": false
     }
 ]

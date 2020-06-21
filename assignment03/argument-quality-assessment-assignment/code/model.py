@@ -4,13 +4,13 @@ import os
 import csv
 import numpy as np
 
-from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
+from sklearn.metrics import f1_score
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import SGDClassifier
 from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.preprocessing import StandardScaler
 from sklearn.base import BaseEstimator
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, GridSearchCV
+from sklearn.svm import SVC
 
 CURRENT_WORKING_DIR = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 CORPUS_PATH = f'{CURRENT_WORKING_DIR}/../data/essay_corpus.json'
@@ -189,6 +189,21 @@ def adv_trans_text_analysis(test_essays):
                 print(str(trueItem)+" > ('"+str(trueItem[0])+", "+str(false_dict[trueItem[0]])+")")
 
 
+def grid_search(train_X, train_y, features):
+    grid_values = {'clf__C': [5, 10, 100, 1000, 2000],
+                   'clf__gamma': [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6]}
+    grid_pipeline = Pipeline(
+            [('all', FeatureUnion(features)),
+             ('clf', SVC(kernel='linear', max_iter=5000, random_state=42)),
+             ])
+
+    gs = GridSearchCV(grid_pipeline, grid_values, scoring='f1', cv=5, n_jobs=-1)
+    gs.fit(train_X, train_y)
+    print('Best parameter combination = ')
+
+    print(gs.best_params_)
+
+
 class Prediction(object):
     id = ""
     confirmation_bias = False
@@ -224,7 +239,7 @@ if __name__ == "__main__":
         test_X = list(test_essays['text'])
         test_y = list(test_essays['bias'])
 
-        # Analysing the Occurence of Adversative Transition Phrases on training data. Uncomment the code to see
+        # Analysing the occurrence of Adversative Transition Phrases on training data. Uncomment the code to see
         # print('Train data:')
         # adv_trans_text_analysis(train_essays)
         # print()
@@ -236,10 +251,12 @@ if __name__ == "__main__":
         features = [('adv_trans_features', AdversativeTransitionFeatures()),
                     ('vec', TfidfVectorizer(ngram_range=(1, 3), lowercase=False))]
 
+        # Performing Grid Search for hyper-parameter tuning, uncomment to check
+        # grid_search(list(train_X), list(train_y), features)
+
         svm_pipeline = Pipeline(
             [('all', FeatureUnion(features)),
-             ('clf', SGDClassifier(loss='hinge', penalty='l2', alpha=1e-5, max_iter=2000,
-                                   tol=None, class_weight='balanced', n_jobs=-1, random_state=42)),
+             ('clf', SVC(kernel='linear', C=5, gamma=1e-1, max_iter=5000, random_state=42))
              ])
 
         # 10-fold cross-validation
@@ -261,14 +278,8 @@ if __name__ == "__main__":
         pred = svm_pipeline.predict(test_X)
         f1 = f1_score(y_true=test_y, y_pred=pred)
         f1_macro = f1_score(y_true=test_y, y_pred=pred, average='macro')
-        accuracy = accuracy_score(y_true=test_y, y_pred=pred)
-        precision = precision_score(y_true=test_y, y_pred=pred)
-        recall = recall_score(y_true=test_y, y_pred=pred)
         print('F1 for SVM: ' + str(f1))
         print('F1-macro for SVM: ' + str(f1_macro))
-        print('Accuracy for SVM: ' + str(accuracy))
-        print('Precision for SVM: ' + str(precision))
-        print('Recall for SVM: ' + str(recall))
 
         print("=============================================================\n")
         create_prediction_file(test_essays['id'], pred)

@@ -37,7 +37,7 @@
 - On a venv install the requirements specified in `requirements.txt`
 - Make sure you have the same directory structure as above otherwise adjust the paths in the `model.py` script accordingly.
 - Run `model.py` to generate the predictions in `data/` directory with name `predictions.json`
-- Run `conf_bias_evaluation.py` script with the filepath to the `data/`.
+- Run `conf_bias_evaluation.py` script with the path to the `data/`.
 
 ## Model Selection
 
@@ -48,7 +48,7 @@ We selected SVM as the model for mainly these 3 reasons:
 - Even then we tried multiple other models: Logistic Regression, Naive Bayes, Random Forrest and the performance of SVM was the best.
 - We used Linear SVM because text classification is mostly a linearly separable problem[1] and using kernels(rbf, poly) to map the data to a higher dimensional space did not really improve the performance in this case.
 
-- We used GridSearch for hyperparameter tuning.
+- We used GridSearch for hyperparameter tuning (using `grid_search()` function in the `model.py`).
 
 [1] : https://link.springer.com/chapter/10.1007/BFb0026683
 
@@ -67,6 +67,6 @@ For features we used the following:
   - replacement (3)
 
   For each of these categories, we added features for the upper and the lower case as well as for their presence in the surrounding paragraph (introduction+conclusion or in the body)but the results were even worse than just the approach with only `n-grams + TF-IDF`. So we did a deeper analysis of training data by finding the occurrences of phrases in both the `true` and `false` classes (using `adv_trans_text_analysis` function in the code). As a result, we detected that the concession and conflict phrases are the best indicator for the `opposing arguments` in our training data.
-  Consequently, we just used 15 phrases of these categories to get an F1 score of `.754`.
+  Consequently, we just used 15 phrases of these categories to get an F1 score of `.759`.
 
 - We used 10-fold cross-validation on the training data for regularization.
