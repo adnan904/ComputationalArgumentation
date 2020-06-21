@@ -37,7 +37,7 @@
 - On a venv install the requirements specified in `requirements.txt`
 - Make sure you have the same directory structure as above otherwise adjust the paths in the `model.py` script accordingly.
 - Run `model.py` to generate the predictions in `data/` directory with name `predictions.json`
-- Run `conf_bias_evaluation` script with the filepath to the `data/`.
+- Run `conf_bias_evaluation.py` script with the filepath to the `data/`.
 
 ## Model Selection
 
