@@ -194,7 +194,7 @@ def grid_search(train_X, train_y, features):
                    'clf__gamma': [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6]}
     grid_pipeline = Pipeline(
             [('all', FeatureUnion(features)),
-             ('clf', SVC(kernel='linear', max_iter=5000, random_state=42)),
+             ('clf', SVC(kernel='rbf', max_iter=5000, random_state=42)),
              ])
 
     gs = GridSearchCV(grid_pipeline, grid_values, scoring='f1', cv=5, n_jobs=-1)
@@ -256,7 +256,7 @@ if __name__ == "__main__":
 
         svm_pipeline = Pipeline(
             [('all', FeatureUnion(features)),
-             ('clf', SVC(kernel='linear', C=5, gamma=1e-1, max_iter=5000, random_state=42))
+             ('clf', SVC(kernel='linear', C=2000, gamma=1e-5, max_iter=5000, random_state=42))
              ])
 
         # 10-fold cross-validation
