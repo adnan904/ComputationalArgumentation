@@ -37,9 +37,14 @@
 
 ### How to run the scripts
 
+- On a clean `venv` install the packages in the `requirements.txt` file: 
+```
+pip install -r requirements.txt
+```
 - Make sure you have the same directory structure as above otherwise adjust the paths in the scripts accordingly.
-- Run `page_rank.py` to generate the predictions in `data/` directory with name `predictions.json`. (It is important to note that running this script for the first time will lead to a download of around 800Mbs NLTK data [3])
+- Run `page_rank.py` to generate the predictions in `data/` directory with name `predictions.json`. (It is important to note that running this script for the first time will lead to a download of around 800MBs NLTK data [3] + glove word embeddings)
 - Run `evaluation` script with `predictions.json` as predictions.
+
 ##### Optional
 
 - Run `t5.py`  to generate the predictions in `data/` directory with name `predictions.json`. (Similarly to the textrank approach data of around 250mbs will be downloaded when run for the first time.)
