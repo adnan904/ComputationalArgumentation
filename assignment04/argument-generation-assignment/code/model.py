@@ -6,7 +6,9 @@ import json
 import os
 import sys
 import wget
-
+import argparse
+import torch
+from transformers import T5Tokenizer, T5ForConditionalGeneration
 nltk.download('punkt')  # one time execution
 from sklearn.metrics.pairwise import cosine_similarity
 import networkx as nx
@@ -64,6 +66,14 @@ def remove_stopwords(sen):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--t5", "-t5", required=False, help="Get Abstractive summary from top page ranked sentences",
+                         type=str, default=False, metavar="t5")
+    args = parser.parse_args()
+    if args.t5 in ['True', 'true', 'T', 't']:
+        model = T5ForConditionalGeneration.from_pretrained('t5-small')
+        tokenizer = T5Tokenizer.from_pretrained('t5-small')
+        device = torch.device('cpu')
     csv_df = pd.read_csv(SPLIT_FILE_PATH, delimiter=';')
     csv_df = csv_df.loc[csv_df['SET'] == 'TEST']
     test_essays_id_strings = csv_df['ID']
@@ -113,8 +123,15 @@ if __name__ == "__main__":
             nx_graph = nx.from_numpy_array(sm)
             scores = nx.pagerank(nx_graph)
             ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(v)), reverse=True)
+            prompt = ranked_sentences[0][1] + ' ' + ranked_sentences[1][1]
+            if args.t5 in ['True', 'true', 'T', 't']:
+                t5_prepared_Text = "summarize: " + prompt.lower()
+                tokenized_text = tokenizer.encode(t5_prepared_Text, return_tensors="pt").to(device)
+                # summmarize
+                summary_ids = model.generate(tokenized_text)
+                prompt = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
             # Generate summary
-            essay_obj = {'id': k, 'prompt': ranked_sentences[0][1]}
+            essay_obj = {'id': k, 'prompt': prompt}
             output.append(essay_obj)
 
     json_dump = json.dumps(output, indent=4, ensure_ascii=False)
